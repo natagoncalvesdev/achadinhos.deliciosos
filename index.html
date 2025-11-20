@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Controle de Insumos & Cálculo de Custo — Demo</title>
+  <style>
+    :root{font-family:Inter, system-ui, Arial; --card:#fff; --muted:#666}
+    body{background:#f3f4f6;color:#111;margin:0;padding:24px;}
+    h1,h2{margin:0 0 12px 0}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+    .card{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(20,20,20,0.06)}
+    label{display:block;margin:8px 0 4px;font-size:13px;color:var(--muted)}
+    input,select,button{padding:8px 10px;border-radius:6px;border:1px solid #ddd;width:100%;box-sizing:border-box}
+    table{width:100%;border-collapse:collapse;margin-top:12px}
+    th,td{padding:8px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
+    .small{font-size:13px;color:var(--muted)}
+    .row{display:flex;gap:8px}
+    .btn{cursor:pointer;background:#0ea5a4;color:white;border:none}
+    .btn.ghost{background:transparent;color:#0ea5a4;border:1px solid #0ea5a4}
+    .muted{color:var(--muted)}
+    footer{margin-top:18px;font-size:13px;color:var(--muted)}
+  </style>
+</head>
+<body>
+  <h1>Controle de Insumos / Custo de Produção — Demo</h1>
+  <p class="small">Single-file demo. Integra com <strong>Firestore</strong> — cole sua configuração no JS (veja instruções no topo do script).</p>
+
+  <div class="grid">
+    <!-- Ingredientes -->
+    <div class="card">
+      <h2>Insumos (ingredientes)</h2>
+      <form id="form-ingredient">
+        <label>Nome</label>
+        <input id="ing-name" placeholder="Farinha" required />
+        <label>Quantidade total (unidade do estoque)</label>
+        <input id="ing-qty" type="number" step="any" placeholder="5000" required />
+        <label>Unidade (g, kg, unidades)</label>
+        <input id="ing-unit" placeholder="gramas" value="gramas" required />
+        <label>Preço total (R$)</label>
+        <input id="ing-price" type="number" step="any" placeholder="20.50" required />
+        <div style="margin-top:8px" class="row">
+          <button class="btn" type="submit">Adicionar / Atualizar</button>
+          <button class="btn ghost" id="btn-clear-ing" type="button">Limpar</button>
+        </div>
+      </form>
+
+      <table id="table-ingredients">
+        <thead><tr><th>Nome</th><th>Qtd</th><th>Unidade</th><th>Preço uni</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Compras / Entradas -->
+    <div class="card">
+      <h2>Registrar Compra (estoque)</h2>
+      <form id="form-purchase">
+        <label>Insumo</label>
+        <select id="purchase-ing"></select>
+        <label>Quantidade adquirida (mesma unidade do estoque)</label>
+        <input id="purchase-qty" type="number" step="any" placeholder="5000" required />
+        <label>Preço pago (R$)</label>
+        <input id="purchase-price" type="number" step="any" placeholder="22.00" required />
+        <div style="margin-top:8px" class="row">
+          <button class="btn" type="submit">Registrar Compra</button>
+        </div>
+      </form>
+
+      <h3 class="small">Histórico de pedidos</h3>
+      <div id="purchases-list" class="small muted">— vazio —</div>
+    </div>
+
+    <!-- Receitas -->
+    <div class="card">
+      <h2>Receitas (ficha técnica)</h2>
+      <form id="form-recipe">
+        <label>Nome da receita</label>
+        <input id="recipe-name" placeholder="Bolo de chocolate (1kg)" required />
+        <label>Porção padrão (kg) — por quanto a lista de ingredientes foi pensada</label>
+        <input id="recipe-portion" type="number" step="any" value="1" required />
+
+        <label>Ingredientes da receita (quantidade na porção padrão)</label>
+        <div id="recipe-ingredients"></div>
+        <div style="margin-top:6px" class="row">
+          <select id="add-recipe-ing"></select>
+          <input id="add-recipe-qty" placeholder="quantidade (ex: 300)" />
+          <button id="btn-add-recipe-ing" class="btn ghost" type="button">Adicionar ingrediente</button>
+        </div>
+
+        <div style="margin-top:8px" class="row">
+          <button class="btn" type="submit">Salvar receita</button>
+          <button class="btn ghost" id="btn-clear-recipe" type="button">Limpar</button>
+        </div>
+      </form>
+
+      <table id="table-recipes"><thead><tr><th>Nome</th><th>Porção</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <!-- Pedidos / Cálculo -->
+    <div class="card">
+      <h2>Fazer Pedido / Cálculo</h2>
+      <form id="form-order">
+        <label>Receita</label>
+        <select id="order-recipe"></select>
+        <label>Quantidade (kg)</label>
+        <input id="order-kg" type="number" step="any" value="1" required />
+        <label>Preço de venda (R$)</label>
+        <input id="order-price" type="number" step="any" placeholder="Preço que vai cobrar" />
+        <div style="margin-top:8px" class="row">
+          <button class="btn" type="submit">Calcular custo</button>
+          <button class="btn ghost" id="btn-clear-order" type="button">Limpar</button>
+        </div>
+      </form>
+
+      <div id="order-result" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Observações: cole sua config do Firebase no topo do script. Configure regras do Firestore para permitir apenas seus usuários lerem/escreverem (ou deixe só para desenvolvimento). Se quiser, eu ajusto as regras com você.</p>
+  </footer>
+
+<!-- ====== SCRIPT (usa Firebase modular via CDN) ====== -->
+<script type="module">
+// ====== CONFIGURE AQUI ======
+// Cole sua firebaseConfig (objeto) abaixo, por exemplo:
+// const firebaseConfig = { apiKey: "...", authDomain: "...", projectId: "...", ... };
+const firebaseConfig = null; // <- COLE AQUI SUA CONFIGURAÇÃO DO FIREBASE (substitua null)
+
+if (!firebaseConfig) {
+  console.warn('Firebase config not set. Firestore operations will not run. Paste your firebaseConfig object in the script.');
+}
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot, updateDoc, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+let db = null;
+if (firebaseConfig) {
+  const app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+}
+
+// ---------- Helpers: Firestore wrappers (graceful fallback to localStorage) ----------
+const useLocalFallback = !db;
+const storageKey = 'controle_demo_storage_v1';
+function saveLocal(collectionName, docs) {
+  const all = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  all[collectionName] = docs;
+  localStorage.setItem(storageKey, JSON.stringify(all));
+}
+function loadLocal(collectionName) {
+  const all = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  return all[collectionName] || [];
+}
+
+async function addItem(collectionName, data) {
+  if (useLocalFallback) {
+    const arr = loadLocal(collectionName);
+    data._id = Date.now().toString();
+    arr.push(data);
+    saveLocal(collectionName, arr);
+    return data;
+  }
+  const col = collection(db, collectionName);
+  const ref = await addDoc(col, data);
+  data._id = ref.id;
+  return data;
+}
+
+async function setItem(collectionName, id, data) {
+  if (useLocalFallback) {
+    const arr = loadLocal(collectionName);
+    const idx = arr.findIndex(x => x._id === id);
+    if (idx >= 0) arr[idx] = {...arr[idx], ...data};
+    saveLocal(collectionName, arr);
+    return arr[idx];
+  }
+  const ref = doc(db, collectionName, id);
+  await setDoc(ref, data, {merge: true});
+  return {...data, _id: id};
+}
+
+async function listItems(collectionName) {
+  if (useLocalFallback) return loadLocal(collectionName);
+  const snapshot = await getDocs(collection(db, collectionName));
+  const arr = [];
+  snapshot.forEach(d => arr.push({...d.data(), _id: d.id}));
+  return arr;
+}
+
+// ---------- App State & UI ----------
+const els = {
+  formIngredient: document.getElementById('form-ingredient'),
+  ingName: document.getElementById('ing-name'),
+  ingQty: document.getElementById('ing-qty'),
+  ingUnit: document.getElementById('ing-unit'),
+  ingPrice: document.getElementById('ing-price'),
+  tableIngredients: document.querySelector('#table-ingredients tbody'),
+  purchaseIng: document.getElementById('purchase-ing'),
+  purchaseQty: document.getElementById('purchase-qty'),
+  purchasePrice: document.getElementById('purchase-price'),
+  purchasesList: document.getElementById('purchases-list'),
+  formPurchase: document.getElementById('form-purchase'),
+  formRecipe: document.getElementById('form-recipe'),
+  recipeName: document.getElementById('recipe-name'),
+  recipePortion: document.getElementById('recipe-portion'),
+  recipeIngredientsDiv: document.getElementById('recipe-ingredients'),
+  addRecipeIng: document.getElementById('add-recipe-ing'),
+  addRecipeQty: document.getElementById('add-recipe-qty'),
+  btnAddRecipeIng: document.getElementById('btn-add-recipe-ing'),
+  tableRecipes: document.querySelector('#table-recipes tbody'),
+  orderRecipe: document.getElementById('order-recipe'),
+  orderKg: document.getElementById('order-kg'),
+  orderPrice: document.getElementById('order-price'),
+  orderResult: document.getElementById('order-result'),
+  formOrder: document.getElementById('form-order')
+};
+
+// in-memory caches
+let INGREDIENTS = [];
+let RECIPES = [];
+let PURCHASES = [];
+
+async function refreshAll() {
+  INGREDIENTS = await listItems('ingredients');
+  RECIPES = await listItems('recipes');
+  PURCHASES = await listItems('purchases');
+  renderIngredients();
+  renderIngredientsSelects();
+  renderRecipes();
+  renderPurchases();
+}
+
+function toBRL(v){ return Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
+
+function renderIngredients(){
+  els.tableIngredients.innerHTML = '';
+  INGREDIENTS.forEach(i => {
+    const tr = document.createElement('tr');
+    const priceUnit = (i.preco_unitario !== undefined) ? i.preco_unitario : (i.preco_total && i.quantidade_total ? Number(i.preco_total)/Number(i.quantidade_total):0);
+    tr.innerHTML = `
+      <td>${i.nome}</td>
+      <td>${i.quantidade_total} </td>
+      <td>${i.unidade}</td>
+      <td>${toBRL(priceUnit)}</td>
+      <td><button class="btn ghost" data-id="${i._id}">Editar</button></td>
+    `;
+    els.tableIngredients.appendChild(tr);
+  });
+}
+
+function renderIngredientsSelects(){
+  const selTargets = [els.purchaseIng, els.addRecipeIng, els.orderRecipe];
+  selTargets.forEach(s=>{ s.innerHTML = '' });
+  INGREDIENTS.forEach(i => {
+    const opt = document.createElement('option'); opt.value = i._id; opt.textContent = i.nome;
+    els.purchaseIng.appendChild(opt);
+    els.addRecipeIng.appendChild(opt.cloneNode(true));
+  });
+  // recipes select updated later
+}
+
+function renderRecipes(){
+  els.tableRecipes.innerHTML = '';
+  els.orderRecipe.innerHTML = '';
+  RECIPES.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${r.nome}</td><td>${r.porcao_padrao_kg}</td><td><button class="btn ghost" data-id="${r._id}">Editar</button></td>`;
+    els.tableRecipes.appendChild(tr);
+    const opt = document.createElement('option'); opt.value = r._id; opt.textContent = r.nome; els.orderRecipe.appendChild(opt);
+  });
+}
+
+function renderPurchases(){
+  if (!PURCHASES.length) { els.purchasesList.textContent = '— vazio —'; return }
+  els.purchasesList.innerHTML = PURCHASES.map(p=> `${new Date(p.createdAt||p._id*1).toLocaleString()} — ${p.nome} — ${p.quantidade} ${p.unidade} — ${toBRL(p.preco)}`).join('<br>');
+}
+
+// ---------- Ingredient form ----------
+els.formIngredient.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const nome = els.ingName.value.trim();
+  const quantidade_total = Number(els.ingQty.value);
+  const unidade = els.ingUnit.value.trim() || 'un';
+  const preco_total = Number(els.ingPrice.value);
+  // preco unitario calculado
+  const preco_unitario = (quantidade_total>0) ? preco_total/quantidade_total : 0;
+  // if exists, update
+  const existing = INGREDIENTS.find(x=>x.nome.toLowerCase()===nome.toLowerCase());
+  if (existing) {
+    await setItem('ingredients', existing._id, {nome, quantidade_total, unidade, preco_total, preco_unitario});
+  } else {
+    await addItem('ingredients', {nome, quantidade_total, unidade, preco_total, preco_unitario});
+  }
+  await refreshAll();
+  els.formIngredient.reset();
+});
+
+document.getElementById('btn-clear-ing').addEventListener('click',()=>els.formIngredient.reset());
+
+// edit button handler (table)
+els.tableIngredients.addEventListener('click', async (ev)=>{
+  const btn = ev.target.closest('button'); if(!btn) return;
+  const id = btn.dataset.id;
+  const ing = INGREDIENTS.find(x=>x._id===id);
+  if(!ing) return;
+  els.ingName.value = ing.nome;
+  els.ingQty.value = ing.quantidade_total;
+  els.ingUnit.value = ing.unidade;
+  els.ingPrice.value = ing.preco_total;
+});
+
+// ---------- Purchases (add stock) ----------
+els.formPurchase.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const ingId = els.purchaseIng.value;
+  const quantidade = Number(els.purchaseQty.value);
+  const preco = Number(els.purchasePrice.value);
+  const ing = INGREDIENTS.find(x=>x._id===ingId);
+  if(!ing){ alert('Escolha um insumo'); return }
+  // update estoque: nova quantidade_total = antiga + quantidade
+  const newQty = Number(ing.quantidade_total) + quantidade;
+  // recompute preco_unitario: consideramos que o preco informado é do lote comprado
+  // assumimos preco_total acumulado = (preco antigo em R$) + preco novo
+  const oldTotalValue = (ing.preco_total || 0);
+  const newTotalValue = oldTotalValue + preco;
+  const newPrecoUnit = newQty>0 ? newTotalValue / newQty : 0;
+  await setItem('ingredients', ingId, {quantidade_total: newQty, preco_total: newTotalValue, preco_unitario: newPrecoUnit});
+  // salvar registro de compra
+  const purchaseRecord = {insumo_id: ingId, nome: ing.nome, quantidade, unidade: ing.unidade, preco, createdAt: Date.now()};
+  await addItem('purchases', purchaseRecord);
+  await refreshAll();
+  els.formPurchase.reset();
+});
+
+// ---------- Recipes ----------
+function renderRecipeIngredientsUI(recipe){
+  els.recipeIngredientsDiv.innerHTML = '';
+  if(!recipe) return;
+  recipe.ingredientes.forEach((it,idx)=>{
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.marginTop = '6px';
+    row.innerHTML = `<div style="flex:1">${it.nome} — ${it.quantidade}</div><div><button class='btn ghost' data-idx='${idx}'>Remover</button></div>`;
+    els.recipeIngredientsDiv.appendChild(row);
+  });
+}
+
+let EDITING_RECIPE = null;
+let TEMP_RECIPE = {ingredientes:[]};
+
+els.btnAddRecipeIng.addEventListener('click', ()=>{
+  const ingId = els.addRecipeIng.value; const q = Number(els.addRecipeQty.value);
+  const ing = INGREDIENTS.find(x=>x._id===ingId); if(!ing){ alert('Selecione ingrediente'); return }
+  TEMP_RECIPE.ingredientes.push({ingrediente_id:ingId, nome:ing.nome, quantidade:q});
+  renderRecipeIngredientsUI(TEMP_RECIPE);
+  els.addRecipeQty.value='';
+});
+
+els.formRecipe.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const nome = els.recipeName.value.trim(); const porcao = Number(els.recipePortion.value) || 1;
+  const payload = {nome, porcao_padrao_kg:porcao, ingredientes: TEMP_RECIPE.ingredientes};
+  if (EDITING_RECIPE){
+    await setItem('recipes', EDITING_RECIPE._id, payload);
+    EDITING_RECIPE = null;
+  } else {
+    await addItem('recipes', payload);
+  }
+  TEMP_RECIPE = {ingredientes:[]};
+  renderRecipeIngredientsUI(null);
+  els.formRecipe.reset();
+  await refreshAll();
+});
+
+document.getElementById('btn-clear-recipe').addEventListener('click', ()=>{TEMP_RECIPE={ingredientes:[]}; renderRecipeIngredientsUI(null); els.formRecipe.reset();});
+
+// recipe table edit (not fully implemented for brevity)
+els.tableRecipes.addEventListener('click', (ev)=>{
+  const btn = ev.target.closest('button'); if(!btn) return; const id = btn.dataset.id;
+  const r = RECIPES.find(x=>x._id===id); if(!r) return;
+  EDITING_RECIPE = r; TEMP_RECIPE = {ingredientes: JSON.parse(JSON.stringify(r.ingredientes||[]))};
+  els.recipeName.value = r.nome; els.recipePortion.value = r.porcao_padrao_kg; renderRecipeIngredientsUI(TEMP_RECIPE);
+});
+
+// remove recipe ingredient (delegation)
+els.recipeIngredientsDiv.addEventListener('click',(ev)=>{
+  const btn = ev.target.closest('button'); if(!btn) return; const idx = Number(btn.dataset.idx);
+  TEMP_RECIPE.ingredientes.splice(idx,1); renderRecipeIngredientsUI(TEMP_RECIPE);
+});
+
+// ---------- Orders / calculation ----------
+els.formOrder.addEventListener('submit',(ev)=>{
+  ev.preventDefault();
+  const recipeId = els.orderRecipe.value; const kg = Number(els.orderKg.value) || 1; const priceSell = Number(els.orderPrice.value) || 0;
+  const recipe = RECIPES.find(r=>r._id===recipeId); if(!recipe){ alert('Escolha uma receita'); return }
+  // For each ingredient, compute needed quantity scaled by kg / porcao_padrao_kg
+  const scale = kg / (recipe.porcao_padrao_kg || 1);
+  const details = recipe.ingredientes.map(it=>{
+    const ing = INGREDIENTS.find(x=>x._id===it.ingrediente_id) || {};
+    const needed = Number(it.quantidade) * scale; // same units as recipe
+    const unitPrice = Number(ing.preco_unitario || 0);
+    // but be careful with units: assume recipe uses same unit as stock (e.g., grams and unidades)
+    const cost = needed * unitPrice;
+    return {nome: it.nome, needed, unidade: ing.unidade || '?', unitPrice, cost};
+  });
+  const totalCost = details.reduce((s,d)=>s + d.cost,0);
+  const lucro = (priceSell || 0) - totalCost;
+
+  // render result
+  els.orderResult.innerHTML = `
+    <h3>Resultado</h3>
+    <div class="small muted">Receita: ${recipe.nome} — ${kg} kg</div>
+    <table><thead><tr><th>Insumo</th><th>Quantidade</th><th>Unidade</th><th>Custo</th></tr></thead><tbody>
+    ${details.map(d=>`<tr><td>${d.nome}</td><td>${Number(d.needed).toFixed(2)}</td><td>${d.unidade}</td><td>${toBRL(d.cost)}</td></tr>`).join('')}
+    </tbody></table>
+    <p class="small">Custo total: <strong>${toBRL(totalCost)}</strong></p>
+    <p class="small">Preço de venda informado: <strong>${toBRL(priceSell)}</strong></p>
+    <p class="small">Lucro estimado: <strong>${toBRL(lucro)}</strong> (${((lucro/Math.max(1,priceSell||1))*100).toFixed(1)}% sobre o preço)</p>
+  `;
+
+  // Save order optionally
+  const save = confirm('Salvar este pedido no histórico?');
+  if (save) {
+    (async ()=>{
+      await addItem('orders',{recipe_id:recipe._id, recipe_name:recipe.nome, kg, priceSell, totalCost, createdAt:Date.now()});
+      alert('Pedido salvo.');
+    })();
+  }
+});
+
+await refreshAll();
+
+</script>
+</body>
+</html>
