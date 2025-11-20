@@ -667,7 +667,15 @@
 // ====== CONFIGURE AQUI ======
 // Cole sua firebaseConfig (objeto) abaixo, por exemplo:
 // const firebaseConfig = { apiKey: "...", authDomain: "...", projectId: "...", ... };
-const firebaseConfig = null; // <- COLE AQUI SUA CONFIGURAÇÃO DO FIREBASE (substitua null)
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDg83oO_NjNU_Tz9AKTfmsxYJY7vSkijyM",
+  authDomain: "achadinhos-deliciosos.firebaseapp.com",
+  projectId: "achadinhos-deliciosos",
+  storageBucket: "achadinhos-deliciosos.firebasestorage.app",
+  messagingSenderId: "782203131056",
+  appId: "1:782203131056:web:2c832412f81157cac1d775"
+}
 
 if (!firebaseConfig) {
   console.warn('Firebase config not set. Firestore operations will not run. Paste your firebaseConfig object in the script.');
