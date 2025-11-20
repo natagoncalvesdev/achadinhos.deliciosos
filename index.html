@@ -136,6 +136,26 @@
     .cards-grid.two{
       grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
     }
+    .home-cards {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    .home-card {
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .home-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+    .home-card h4 {
+      margin: 0 0 8px;
+    }
+    .home-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
     .card{
       background:var(--card);
       border-radius:16px;
@@ -343,7 +363,8 @@
       </div>
       <nav>
         <ul class="nav">
-          <li><a href="#compras" data-target="compras" class="active">📦 Compras</a></li>
+          <li><a href="#home" data-target="home" class="active">🏠 Home</a></li>
+          <li><a href="#compras" data-target="compras">📦 Compras</a></li>
           <li><a href="#insumos" data-target="insumos">🧺 Insumos</a></li>
           <li><a href="#bolos" data-target="bolos">🎂 Bolos & Receitas</a></li>
           <li><a href="#simulador" data-target="simulador">📊 Simulador de venda</a></li>
@@ -355,6 +376,7 @@
       <div class="mobile-nav">
         <label for="mobile-nav-select">Navegar para:</label>
         <select id="mobile-nav-select">
+          <option value="home">🏠 Home</option>
           <option value="compras">📦 Compras</option>
           <option value="insumos">🧺 Insumos</option>
           <option value="bolos">🎂 Bolos & Receitas</option>
@@ -364,23 +386,53 @@
           <option value="relatorios">📈 Relatórios</option>
         </select>
       </div>
-      <footer>
-        Controle visual dos pedidos, estoque e custos em um só lugar, com dados salvos no Firestore ou armazenamento local seguro.
-      </footer>
+      
     </aside>
     </div>
     <main>
       <header class="page-header">
         <div>
           <span class="eyebrow">Achadinhos · Backoffice</span>
-          <h2 style="margin:0">Tudo que sua confeitaria precisa para produzir com precisão</h2>
-          <p class="muted" style="max-width:620px;margin-top:12px">
-            Organize compras, controle insumos e calcule automaticamente cada ficha técnica. Visual limpo, botões destacados e navegação rápida deixam o fluxo de trabalho mais profissional.
-          </p>
+          <h2 style="margin:0" id="page-title">Bem-vindo(a)!</h2>
         </div>
       </header>
 
-      <section id="compras" class="section page active" data-page="compras">
+      <section id="home" class="section page active" data-page="home">
+        <h3>Painel de Navegação</h3>
+        <p class="muted">Tudo que sua confeitaria precisa para produzir com precisão. Organize compras, controle insumos e calcule automaticamente cada ficha técnica.</p>
+        <div class="cards-grid home-cards">
+          <a href="#compras" class="card home-card" data-target="compras">
+            <h4>📦 Compras</h4>
+            <p>Registre novas compras de insumos.</p>
+          </a>
+          <a href="#insumos" class="card home-card" data-target="insumos">
+            <h4>🧺 Insumos</h4>
+            <p>Gerencie seu estoque de ingredientes.</p>
+          </a>
+          <a href="#bolos" class="card home-card" data-target="bolos">
+            <h4>🎂 Bolos & Receitas</h4>
+            <p>Crie e edite suas fichas técnicas.</p>
+          </a>
+          <a href="#simulador" class="card home-card" data-target="simulador">
+            <h4>📊 Simulador de venda</h4>
+            <p>Estime custos e gere cotações rápidas.</p>
+          </a>
+          <a href="#registrar" class="card home-card" data-target="registrar">
+            <h4>🧾 Registrar Venda</h4>
+            <p>Lance uma nova venda confirmada.</p>
+          </a>
+          <a href="#vendas" class="card home-card" data-target="vendas">
+            <h4>💼 Vendas</h4>
+            <p>Acompanhe o calendário de entregas.</p>
+          </a>
+          <a href="#relatorios" class="card home-card" data-target="relatorios">
+            <h4>📈 Relatórios</h4>
+            <p>Analise o desempenho do seu negócio.</p>
+          </a>
+        </div>
+      </section>
+
+      <section id="compras" class="section page" data-page="compras">
         <h3>Registro rápido do que foi comprado</h3>
         <p class="muted">Digite o item comprado, a quantidade adquirida e o valor pago. Usamos esses dados para recalcular o custo unitário do estoque.</p>
         <div class="cards-grid two">
@@ -680,6 +732,7 @@ async function listItems(collectionName) {
 
 // ---------- App State & UI ----------
 const els = {
+  pageTitle: document.getElementById('page-title'),
   formIngredient: document.getElementById('form-ingredient'),
   ingName: document.getElementById('ing-name'),
   ingQty: document.getElementById('ing-qty'),
@@ -713,6 +766,7 @@ const els = {
   saleKg: document.getElementById('sale-kg'),
   saleResult: document.getElementById('sale-result'),
   navLinks: Array.from(document.querySelectorAll('.nav a')),
+  homeCardLinks: Array.from(document.querySelectorAll('.home-card')),
   pages: Array.from(document.querySelectorAll('[data-page]')),
   salesTableBody: document.querySelector('#table-sales tbody'),
   calendarGrid: document.getElementById('sales-calendar'),
@@ -730,7 +784,7 @@ const els = {
   reportTableIngredients: document.querySelector('#report-table-ingredients tbody')
 };
 
-const DEFAULT_PAGE = 'compras';
+const DEFAULT_PAGE = 'home';
 let LAST_QUOTE_MESSAGE = '';
 const calendarState = {
   current: new Date(),
@@ -745,6 +799,10 @@ function activatePage(pageId = DEFAULT_PAGE){
   if(els.mobileNavSelect.value !== targetPage){
     els.mobileNavSelect.value = targetPage;
   }
+  const activeLink = els.navLinks.find(link => link.dataset.target === targetPage);
+  if (els.pageTitle) {
+    els.pageTitle.textContent = activeLink ? activeLink.textContent.replace(/^[^\w\s]+/, '').trim() : 'Painel';
+  }
 }
 
 function handleNavClick(ev){
@@ -757,6 +815,7 @@ function handleNavClick(ev){
 }
 
 els.navLinks.forEach(link => link.addEventListener('click', handleNavClick));
+els.homeCardLinks.forEach(link => link.addEventListener('click', handleNavClick));
 
 els.mobileNavSelect.addEventListener('change', (ev) => {
   const target = ev.target.value;
