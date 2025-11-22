@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Achadinhos Deliciosos — Vitrine</title>
+  <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css" />
+  <style>
+    :root{
+      font-family:"Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --bg:#f4f6fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#6b7280;
+      --border:#e2e8f0;
+    }
+    body{ background:var(--bg); color:var(--text); }
+    main{ max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+    header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 32px; }
+    h1 { font-size: 1.6rem; font-weight: 600; }
+    .user-info { font-size: 0.9rem; color: var(--muted); }
+    .btn{ cursor:pointer; background:linear-gradient(135deg,#ff9a8b,#ff6a88 45%,#ff99ac); color:#fff; border:none; font-weight:600; text-align:center; border-radius:999px; box-shadow:0 12px 25px rgba(255,106,136,0.35); padding: 8px 16px; font-size:0.9rem; }
+    .btn.ghost{ background:transparent; color:#ff6a88; border:1px solid rgba(255,106,136,0.4); box-shadow:none; }
+    .cards-grid{ display:grid; gap:20px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+    .card{ background:var(--card); border-radius:16px; padding:20px; box-shadow:0 20px 45px rgba(15,23,42,0.08); border:1px solid rgba(15,23,42,0.05); }
+    .product-card h4 { margin: 0 0 8px; }
+    .product-card p { margin: 0; font-size: 0.9rem; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+  <main>
+    <header>
+      <div>
+        <h1 id="cliente-welcome"></h1>
+        <p class="user-info" id="user-info"></p>
+      </div>
+      <button id="btn-logout" class="btn ghost">Sair</button>
+    </header>
+
+    <h2>Produtos Disponíveis</h2>
+    <p style="color: var(--muted); margin-bottom: 24px;">Abaixo estão os produtos disponíveis para encomenda. Em breve, mais funcionalidades!</p>
+    
+    <div id="public-products-list" class="cards-grid">
+      <p>Carregando produtos...</p>
+    </div>
+  </main>
+
+<script type="module">
+  const firebaseConfig = {
+    apiKey: "AIzaSyDg83oO_NjNU_Tz9AKTfmsxYJY7vSkijyM",
+    authDomain: "achadinhos-deliciosos.firebaseapp.com",
+    projectId: "achadinhos-deliciosos",
+    storageBucket: "achadinhos-deliciosos.appspot.com",
+    messagingSenderId: "782203131056",
+    appId: "1:782203131056:web:2c832412f81157cac1d775"
+  };
+
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getFirestore, collection, doc, getDoc, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+  import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  function toBRL(v){ return Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
+
+  async function renderPublicRecipes() {
+    const publicProductsList = document.getElementById('public-products-list');
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const professional = usersSnapshot.docs.map(d => d.data()).find(u => u.categoria === 'profissional');
+
+    if (!professional) {
+      publicProductsList.innerHTML = '<p class="muted">Nenhum profissional configurado no sistema ainda.</p>';
+      return;
+    }
+
+    // O ID do documento do profissional é o ID do usuário dele
+    const professionalId = usersSnapshot.docs.find(d => d.data().email === professional.email).id;
+    const publicRecipesPath = `users/${professionalId}/recipes`;
+    const q = query(collection(db, publicRecipesPath), where("publica", "==", true));
+    const snapshot = await getDocs(q);
+    
+    publicProductsList.innerHTML = '';
+    if (snapshot.empty) {
+      publicProductsList.innerHTML = '<p class="muted">Nenhum produto disponível na loja no momento.</p>';
+      return;
+    }
+
+    snapshot.forEach(doc => {
+      const recipe = doc.data();
+      const card = document.createElement('div');
+      card.className = 'card product-card';
+      card.innerHTML = `<h4>${recipe.nome}</h4><p>${toBRL(recipe.preco_base)} / ${recipe.preco_tipo}</p>`;
+      publicProductsList.appendChild(card);
+    });
+  }
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      const userDocRef = doc(db, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (userDoc.exists()) {
+        const userData = userDoc.data();
+        if (userData.categoria !== 'cliente') {
+          // Se não for cliente, redireciona para o roteador principal
+          window.location.replace('index.html');
+          return;
+        }
+        const firstName = (userData.nome || '').split(' ')[0];
+        document.getElementById('cliente-welcome').textContent = `Bem-vindo(a), ${firstName}!`;
+        document.getElementById('user-info').textContent = `Logado como: ${userData.email}`;
+        renderPublicRecipes();
+      }
+    } else {
+      window.location.replace('login.html');
+    }
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', async () => {
+    await signOut(auth);
+  });
+</script>
+
+</body>
+</html>

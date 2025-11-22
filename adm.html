@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel Admin — Achadinhos Deliciosos</title>
+  <style>
+    :root{
+      font-family:"Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --sidebar:#1d2327;
+      --sidebar-dark:#11161a;
+      --bg:#f4f6fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#6b7280;
+      --border:#e2e8f0;
+      color:var(--text);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display: none; /* Esconde o corpo até a verificação do usuário */
+    }
+    .app{
+      display:flex;
+      min-height:100vh;
+    }
+    .sidebar-container{
+      position:sticky;
+      top:0;
+      height:100vh;
+    }
+    .sidebar{
+      width:280px;
+      background:linear-gradient(180deg,var(--sidebar),var(--sidebar-dark));
+      color:#fff;
+      padding:32px 24px;
+      display:flex;
+      flex-direction:column;
+      gap:32px;
+      height:100%;
+    }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .brand h1{
+      font-size:1.4rem;
+      margin:0;
+    }
+    .brand span{
+      font-size:0.9rem;
+      opacity:0.8;
+    }
+    .nav{
+      list-style:none;
+      margin:0;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .nav a{
+      text-decoration:none;
+      color:#e2e8f0;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:12px;
+      background:#1b2031;
+      border:1px solid #262d42;
+      box-shadow:0 4px 10px rgba(0,0,0,0.25);
+      transition:background .2s ease, transform .2s ease, box-shadow .2s ease;
+      font-size:0.95rem;
+    }
+    .nav a:hover{
+      background:#232a42;
+      transform:translateY(-1px);
+      box-shadow:0 8px 18px rgba(9,12,24,0.45);
+    }
+    .nav a.active{
+      background:linear-gradient(135deg,#233053,#33406a);
+      border-color:#3a4c7d;
+      box-shadow:0 12px 24px rgba(26,35,58,0.6);
+    }
+    .sidebar footer{
+      font-size:0.85rem;
+      opacity:0.8;
+      line-height:1.4;
+      margin-top:auto;
+    }
+    main{
+      flex:1;
+      padding:32px 40px 48px;
+      display:flex;
+      flex-direction:column;
+      gap:32px;
+    }
+    header.page-header{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      gap:16px;
+      border-bottom:1px solid var(--border);
+      padding-bottom:16px;
+    }
+    header h2{
+      margin:0;
+      font-size:1.6rem;
+    }
+    header p{
+      margin:4px 0 0;
+      color:var(--muted);
+      max-width:520px;
+    }
+    .section{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .section.page{display:none;}
+    .section.page.active{display:flex;}
+    .section h3{
+      margin:0;
+      font-size:1.2rem;
+    }
+    .cards-grid{
+      display:grid;
+      gap:20px;
+    }
+    .cards-grid.two{
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    }
+    .card{
+      background:var(--card);
+      border-radius:16px;
+      padding:20px;
+      box-shadow:0 20px 45px rgba(15,23,42,0.08);
+      border:1px solid rgba(15,23,42,0.05);
+    }
+    .btn{
+      cursor:pointer;
+      background:linear-gradient(135deg,#ff9a8b,#ff6a88 45%,#ff99ac);
+      color:#fff;
+      border:none;
+      font-weight:600;
+      transition:transform .1s ease, box-shadow .1s ease;
+      text-align:center;
+      border-radius:999px;
+      box-shadow:0 12px 25px rgba(255,106,136,0.35);
+      padding: 11px 12px;
+      font-size: 0.95rem;
+    }
+    .btn.ghost{
+      background:transparent;
+      color:#ff6a88;
+      border:1px solid rgba(255,106,136,0.4);
+      box-shadow:none;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:18px;
+    }
+    th,td{
+      padding:10px 6px;
+      text-align:left;
+      border-bottom:1px solid var(--border);
+      font-size:0.9rem;
+    }
+    th{
+      color:var(--muted);
+      font-weight:500;
+      letter-spacing:0.02em;
+    }
+    .muted{color:var(--muted);font-size:0.95rem;}
+    .row-inline{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:8px;
+    }
+    .row-inline select,
+    .row-inline input{
+      flex:1;
+    }
+    .eyebrow{
+      text-transform:uppercase;
+      letter-spacing:0.3em;
+      font-size:0.72rem;
+      color:#94a3b8;
+      margin-bottom:12px;
+      display:block;
+    }
+    .mobile-nav{display:none}
+    .user-info { margin-left: auto; font-size: 0.9rem; opacity: 0.9; }
+    .home-card {
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .home-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+    .home-card h4 { margin: 0 0 8px; }
+    .home-card p { margin: 0; font-size: 0.9rem; color: var(--muted); }
+    @media(max-width:960px){
+      .app{flex-direction:column;}
+      .sidebar{width:100%;flex-direction:row;flex-wrap:wrap;gap:16px;}
+      .sidebar footer{width:100%;}
+      main{padding:24px;}
+      .sidebar-container{position:static;height:auto;}
+      .sidebar{height:auto;}
+      .sidebar .nav{display:none}
+      .mobile-nav{display:flex;width:100%;flex-direction:column;gap:8px;}
+      .mobile-nav label{margin:0;font-size:0.8rem;}
+      .mobile-nav select{background:#232a42;color:#fff;border-color:#3a4c7d;}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar-container">
+      <aside class="sidebar">
+        <div class="brand">
+        <h1>Achadinhos Deliciosos</h1>
+        <span>Painel Administrativo</span>
+      </div>
+      <nav>
+        <ul class="nav">
+          <li><a href="#usuarios" data-target="usuarios" class="active">👤 Usuários</a></li>
+          <li><a href="#profissionais" data-target="profissionais">‍🍳 Profissionais</a></li>
+        </ul>
+      </nav>
+      <div class="mobile-nav">
+        <label for="mobile-nav-select">Navegar para:</label>
+        <select id="mobile-nav-select">
+          <option value="usuarios">👤 Usuários</option>
+          <option value="profissionais">‍🍳 Profissionais</option>
+        </select>
+      </div>
+      <footer>
+        <button id="btn-logout" class="btn ghost" style="width:100%">Sair</button>
+      </footer>
+    </aside>
+    </div>
+    <main>
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Achadinhos · Admin</span>
+          <h2 style="margin:0" id="page-title">Gerenciamento de Usuários</h2>
+          <div id="user-info" class="user-info"></div>
+        </div>
+      </header>
+
+      <section id="profissionais" class="section page" data-page="profissionais">
+        <h3>Visualizar Dados de Profissionais</h3>
+        <p class="muted">Selecione um profissional para visualizar seus relatórios e dados como se fosse ele.</p>
+        <div class="card">
+          <div id="professionals-list" class="cards-grid two">
+            <!-- Cards de profissionais serão renderizados aqui -->
+          </div>
+        </div>
+      </section>
+
+      <section id="usuarios" class="section page active" data-page="usuarios">
+        <h3>Gerenciamento de Usuários</h3>
+        <p class="muted">Visualize e altere a categoria de cada usuário do sistema. A página será recarregada após salvar uma alteração.</p>
+        <div class="card">
+          <table id="table-users">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Categoria Atual</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<!-- ====== SCRIPT (usa Firebase modular via CDN) ====== -->
+<script type="module">
+const firebaseConfig = {
+  apiKey: "AIzaSyDg83oO_NjNU_Tz9AKTfmsxYJY7vSkijyM",
+  authDomain: "achadinhos-deliciosos.firebaseapp.com",
+  projectId: "achadinhos-deliciosos",
+  storageBucket: "achadinhos-deliciosos.appspot.com",
+  messagingSenderId: "782203131056",
+  appId: "1:782203131056:web:2c832412f81157cac1d775"
+}
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, doc, setDoc, getDoc, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+let CURRENT_USER = null;
+let ALL_USERS = [];
+
+const els = {
+  pageTitle: document.getElementById('page-title'),
+  navLinks: Array.from(document.querySelectorAll('.nav a')),
+  pages: Array.from(document.querySelectorAll('[data-page]')),
+  mobileNavSelect: document.getElementById('mobile-nav-select'),
+  btnLogout: document.getElementById('btn-logout'),
+  userInfo: document.getElementById('user-info'),
+  tableUsers: document.querySelector('#table-users tbody'),
+  professionalsList: document.getElementById('professionals-list'),
+};
+
+async function listGlobalItems(collectionName) {
+  const snapshot = await getDocs(collection(db, collectionName));
+  const arr = [];
+  snapshot.forEach(d => arr.push({...d.data(), _id: d.id}));
+  return arr;
+}
+
+function renderUsers() {
+  if (!els.tableUsers) return;
+  els.tableUsers.innerHTML = '';
+  ALL_USERS.forEach(user => {
+    const isCurrentUser = user._id === CURRENT_USER.uid;
+    const actionsHtml = isCurrentUser 
+      ? `<span class="muted">Não pode alterar a si mesmo</span>`
+      : `
+        <div class="row-inline">
+          <select data-userid="${user._id}">
+            <option value="cliente" ${user.categoria === 'cliente' ? 'selected' : ''}>Cliente</option>
+            <option value="profissional" ${user.categoria === 'profissional' ? 'selected' : ''}>Profissional</option>
+            <option value="adm" ${user.categoria === 'adm' ? 'selected' : ''}>Admin</option>
+          </select>
+          <button class="btn ghost" data-action="save-category" data-userid="${user._id}">Salvar</button>
+        </div>
+      `;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${user.nome || 'Não informado'}</td>
+      <td>${user.email}</td>
+      <td>${user.categoria}</td>
+      <td>${actionsHtml}</td>
+    `;
+    els.tableUsers.appendChild(tr);
+  });
+}
+
+function renderProfessionals() {
+  if (!els.professionalsList) return;
+  els.professionalsList.innerHTML = '';
+  const professionals = ALL_USERS.filter(u => u.categoria === 'profissional');
+  if (!professionals.length) {
+    els.professionalsList.innerHTML = '<p class="muted">Nenhum usuário com a categoria "profissional" encontrado.</p>';
+    return;
+  }
+  professionals.forEach(prof => {
+    const card = document.createElement('a');
+    card.className = 'card home-card';
+    card.href = '#'; // A lógica de personificação será tratada no JS
+    card.dataset.impersonateId = prof._id;
+    card.innerHTML = `<h4>‍🍳 ${prof.nome}</h4><p>${prof.email}</p>`;
+    els.professionalsList.appendChild(card);
+  });
+}
+
+function activatePage(pageId = 'usuarios'){
+  els.pages.forEach(page => page.classList.toggle('active', page.dataset.page === pageId));
+  els.navLinks.forEach(link => link.classList.toggle('active', link.dataset.target === pageId));
+  if(els.mobileNavSelect.value !== pageId) els.mobileNavSelect.value = pageId;
+  const activeLink = els.navLinks.find(link => link.dataset.target === pageId);
+  if (els.pageTitle) els.pageTitle.textContent = activeLink ? activeLink.textContent.replace(/^[^\w\s]+/, '').trim() : 'Painel';
+}
+
+els.navLinks.forEach(link => link.addEventListener('click', (e) => {
+  e.preventDefault();
+  const target = e.currentTarget.dataset.target;
+  activatePage(target);
+  history.replaceState(null, '', `#${target}`);
+}));
+
+els.mobileNavSelect.addEventListener('change', (e) => {
+  activatePage(e.target.value);
+  history.replaceState(null, '', `#${e.target.value}`);
+});
+
+els.tableUsers.addEventListener('click', async (e) => {
+  if (e.target.dataset.action === 'save-category') {
+    const userId = e.target.dataset.userid;
+    const select = els.tableUsers.querySelector(`select[data-userid="${userId}"]`);
+    if (!userId || !select) return;
+    const newCategory = select.value;
+    await setDoc(doc(db, 'users', userId), { categoria: newCategory }, { merge: true });
+    alert('Categoria do usuário atualizada com sucesso! A página será recarregada.');
+    window.location.reload();
+  }
+});
+
+els.professionalsList.addEventListener('click', (e) => {
+  const card = e.target.closest('[data-impersonate-id]');
+  if (!card) return;
+  e.preventDefault();
+  const professionalId = card.dataset.impersonateId;
+  // A personificação agora redireciona para a página do profissional com um parâmetro
+  window.open(`profissional.html?impersonate=${professionalId}`, '_blank');
+  alert(`Abrindo a visão do profissional em uma nova aba. Você continuará como admin nesta aba.`);
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      if (userData.categoria !== 'adm') {
+        window.location.replace('index.html');
+        return;
+      }
+      CURRENT_USER = { uid: user.uid, ...userData };
+      document.body.style.display = 'block';
+      els.userInfo.textContent = `Logado como: ${CURRENT_USER.email}`;
+      
+      ALL_USERS = await listGlobalItems('users');
+      renderUsers();
+      renderProfessionals();
+      activatePage((window.location.hash || '').replace('#','') || 'usuarios');
+    } else {
+      window.location.replace('index.html');
+    }
+  } else {
+    window.location.replace('login.html');
+  }
+});
+
+els.btnLogout.addEventListener('click', async () => {
+  await signOut(auth);
+});
+
+</script>
+</body>
+</html>

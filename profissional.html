@@ -1,0 +1,1611 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Painel Profissional — Achadinhos Deliciosos</title>
+  <style>
+    :root{
+      font-family:"Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --sidebar:#1d2327;
+      --sidebar-dark:#11161a;
+      --bg:#f4f6fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#6b7280;
+      --border:#e2e8f0;
+      color:var(--text);
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      min-height:100vh;
+      display: none; /* Esconde o corpo até a verificação do usuário */
+    }
+    .app{
+      display:flex;
+      min-height:100vh;
+    }
+    .sidebar-container{
+      position:sticky;
+      top:0;
+      height:100vh;
+    }
+    .sidebar{
+      width:280px;
+      background:linear-gradient(180deg,var(--sidebar),var(--sidebar-dark));
+      color:#fff;
+      padding:32px 24px;
+      display:flex;
+      flex-direction:column;
+      gap:32px;
+      height:100%;
+    }
+    .brand{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .brand h1{
+      font-size:1.4rem;
+      margin:0;
+    }
+    .brand span{
+      font-size:0.9rem;
+      opacity:0.8;
+    }
+    .nav{
+      list-style:none;
+      margin:0;
+      padding:0;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .nav a{
+      text-decoration:none;
+      color:#e2e8f0;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:12px;
+      background:#1b2031;
+      border:1px solid #262d42;
+      box-shadow:0 4px 10px rgba(0,0,0,0.25);
+      transition:background .2s ease, transform .2s ease, box-shadow .2s ease;
+      font-size:0.95rem;
+    }
+    .nav a:hover{
+      background:#232a42;
+      transform:translateY(-1px);
+      box-shadow:0 8px 18px rgba(9,12,24,0.45);
+    }
+    .nav a.active{
+      background:linear-gradient(135deg,#233053,#33406a);
+      border-color:#3a4c7d;
+      box-shadow:0 12px 24px rgba(26,35,58,0.6);
+    }
+    .sidebar footer{
+      font-size:0.85rem;
+      opacity:0.8;
+      line-height:1.4;
+      margin-top:auto;
+    }
+    main{
+      flex:1;
+      padding:32px 40px 48px;
+      display:flex;
+      flex-direction:column;
+      gap:32px;
+    }
+    header.page-header{
+      display:flex;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      gap:16px;
+      border-bottom:1px solid var(--border);
+      padding-bottom:16px;
+    }
+    header h2{
+      margin:0;
+      font-size:1.6rem;
+    }
+    header p{
+      margin:4px 0 0;
+      color:var(--muted);
+      max-width:520px;
+    }
+    .section{
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+    }
+    .section.page{display:none;}
+    .section.page.active{display:flex;}
+    .section h3{
+      margin:0;
+      font-size:1.2rem;
+    }
+    .cards-grid{
+      display:grid;
+      gap:20px;
+    }
+    .cards-grid.two{
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    }
+    .home-cards {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    }
+    .home-card {
+      text-decoration: none;
+      color: var(--text);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .home-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+    }
+    .home-card h4 {
+      margin: 0 0 8px;
+    }
+    .home-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+    .card{
+      background:var(--card);
+      border-radius:16px;
+      padding:20px;
+      box-shadow:0 20px 45px rgba(15,23,42,0.08);
+      border:1px solid rgba(15,23,42,0.05);
+    }
+    label{
+      display:block;
+      margin:14px 0 6px;
+      font-size:0.9rem;
+      color:var(--muted);
+    }
+    input,select,button{
+      width:100%;
+      padding:11px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      font-size:0.95rem;
+      font-family:inherit;
+    }
+    input:focus,select:focus,button:focus{
+      outline:2px solid #2563eb33;
+      border-color:#2563eb66;
+    }
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      margin-top:18px;
+    }
+    .btn{
+      cursor:pointer;
+      background:linear-gradient(135deg,#ff9a8b,#ff6a88 45%,#ff99ac);
+      color:#fff;
+      border:none;
+      font-weight:600;
+      transition:transform .1s ease, box-shadow .1s ease;
+      text-align:center;
+      border-radius:999px;
+      box-shadow:0 12px 25px rgba(255,106,136,0.35);
+    }
+    .btn.large{
+      padding:13px 32px;
+      font-size:1rem;
+    }
+    .btn:hover{transform:translateY(-2px);box-shadow:0 16px 30px rgba(255,106,136,0.45)}
+    .btn.ghost{
+      background:transparent;
+      color:#ff6a88;
+      border:1px solid rgba(255,106,136,0.4);
+      box-shadow:none;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      margin-top:18px;
+    }
+    th,td{
+      padding:10px 6px;
+      text-align:left;
+      border-bottom:1px solid var(--border);
+      font-size:0.9rem;
+    }
+    th{
+      color:var(--muted);
+      font-weight:500;
+      letter-spacing:0.02em;
+    }
+    .muted{color:var(--muted);font-size:0.95rem;}
+    .row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:8px;
+    }
+    .row-inline{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      margin-top:8px;
+    }
+    .row-inline select,
+    .row-inline input{
+      flex:1;
+    }
+    .eyebrow{
+      text-transform:uppercase;
+      letter-spacing:0.3em;
+      font-size:0.72rem;
+      color:#94a3b8;
+      margin-bottom:12px;
+      display:block;
+    }
+    .calendar-card{display:flex;flex-direction:column;gap:12px}
+    .calendar-controls{display:flex;align-items:center;justify-content:space-between}
+    .calendar-controls button{
+      width:32px;height:32px;border-radius:50%;border:1px solid var(--border);
+      background:#fff;cursor:pointer;font-weight:600;color:var(--text);
+    }
+    .calendar-label{text-transform:capitalize;font-weight:600}
+    .calendar-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em}
+    .calendar-weekdays span{text-align:center}
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+    .calendar-day{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px 6px;
+      min-height:56px;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      align-items:flex-start;
+      gap:6px;
+      cursor:pointer;
+      transition:all .15s ease;
+    }
+    .calendar-day.empty{background:transparent;border:none;cursor:default}
+    .calendar-day .day-num{font-weight:600;font-size:0.95rem}
+    .calendar-day .badge{
+      margin-left:auto;
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:0.7rem;
+      font-weight:600;
+      background:#e0e7ff;
+      color:#1e3a8a;
+    }
+    .calendar-day.has-delivery{border-color:#fecdd3;background:#fff1f2}
+    .calendar-day.pending{background:#fee2e2;border-color:#fecaca}
+    .calendar-day.done{background:#ecfdf5;border-color:#bbf7d0}
+    .calendar-day.selected{box-shadow:0 0 0 2px #ff9a8b55}
+    .calendar-day-details{
+      border:1px dashed var(--border);
+      border-radius:12px;
+      padding:12px;
+      font-size:0.9rem;
+    }
+    .calendar-day-details h4{margin:0 0 8px;font-size:1rem}
+    .calendar-day-details ul{
+      list-style:none;
+      padding:0;
+      margin:0;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+    .calendar-day-details li{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      padding-bottom:8px;
+      border-bottom:1px solid var(--border);
+    }
+    .calendar-day-details li:last-child{border-bottom:none;padding-bottom:0}
+    .status-chip{
+      border:none;
+      border-radius:999px;
+      padding:4px 10px;
+      font-size:0.8rem;
+      font-weight:600;
+      cursor:pointer;
+      align-self:flex-start;
+    }
+    .status-chip.pending{background:#fee2e2;color:#991b1b}
+    .status-chip.done{background:#dcfce7;color:#166534}
+
+    .mobile-nav{display:none}
+    .report-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
+    .report-summary .card{text-align:center;}
+    .report-summary .card h4{margin:0 0 4px;font-size:1.1rem;color:var(--muted);font-weight:500;}
+    .report-summary .card p{margin:0;font-size:1.8rem;font-weight:600;}
+
+    .report-filters{display:flex;gap:16px;}
+    .report-filters > div{flex:1;}
+    #report-revenue{color:#2563eb;}
+    #report-cost{color:#dc2626;}
+    #report-profit{color:#16a34a;}
+
+    @media(max-width:960px){
+      .app{flex-direction:column;}
+      .sidebar{width:100%;flex-direction:row;flex-wrap:wrap;gap:16px;}
+      .sidebar footer{width:100%;}
+      main{padding:24px;}
+    }
+    .user-info { margin-left: auto; font-size: 0.9rem; opacity: 0.9; }
+  </style>
+  <style>
+    @media(max-width:960px){
+      .sidebar-container{position:static;height:auto;}
+      .sidebar{height:auto;}
+      .sidebar .nav{display:none}
+      .mobile-nav{display:flex;width:100%;flex-direction:column;gap:8px;}
+      .mobile-nav label{margin:0;font-size:0.8rem;}
+      .mobile-nav select{background:#232a42;color:#fff;border-color:#3a4c7d;}
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="sidebar-container">
+      <aside class="sidebar">
+        <div class="brand">
+        <h1>Achadinhos Deliciosos</h1>
+        <span>Central profissional da confeitaria residencial</span>
+      </div>
+      <nav>
+        <ul class="nav">
+          <li><a href="#home" data-target="home" class="active">🏠 Home</a></li>
+          <li><a href="#compras" data-target="compras">📦 Compras</a></li>
+          <li><a href="#insumos" data-target="insumos">🧺 Insumos</a></li>
+          <li><a href="#bolos" data-target="bolos">🎂 Bolos & Receitas</a></li>
+          <li><a href="#simulador" data-target="simulador">📊 Simulador de venda</a></li>
+          <li><a href="#registrar" data-target="registrar">🧾 Registrar venda</a></li>
+          <li><a href="#vendas" data-target="vendas">💼 Vendas</a></li>
+          <li><a href="#relatorios" data-target="relatorios">📈 Relatórios</a></li>
+        </ul>
+      </nav>
+      <div class="mobile-nav">
+        <label for="mobile-nav-select">Navegar para:</label>
+        <select id="mobile-nav-select">
+          <option value="home">🏠 Home</option>
+          <option value="compras">📦 Compras</option>
+          <option value="insumos">🧺 Insumos</option>
+          <option value="bolos">🎂 Bolos & Receitas</option>
+          <option value="simulador">📊 Simulador de venda</option>
+          <option value="registrar">🧾 Registrar venda</option>
+          <option value="vendas">💼 Vendas</option>
+          <option value="relatorios">📈 Relatórios</option>
+        </select>
+      </div>
+      <footer>
+        <button id="btn-logout" class="btn ghost" style="width:100%">Sair</button>
+      </footer>
+    </aside>
+    </div>
+    <main>
+      <header class="page-header">
+        <div>
+          <span class="eyebrow">Achadinhos · Backoffice</span>
+          <h2 style="margin:0" id="page-title">Bem-vindo(a)!</h2>
+          <div id="user-info" class="user-info"></div>
+        </div>
+      </header>
+
+      <section id="home" class="section page active" data-page="home">
+        <h3>Painel de Navegação</h3>
+        <p class="muted">Tudo que sua confeitaria precisa para produzir com precisão. Organize compras, controle insumos e calcule automaticamente cada ficha técnica.</p>
+        <div class="cards-grid home-cards">
+          <a href="#compras" class="card home-card" data-target="compras">
+            <h4>📦 Compras</h4>
+            <p>Registre novas compras de insumos.</p>
+          </a>
+          <a href="#insumos" class="card home-card" data-target="insumos">
+            <h4>🧺 Insumos</h4>
+            <p>Gerencie seu estoque de ingredientes.</p>
+          </a>
+          <a href="#bolos" class="card home-card" data-target="bolos">
+            <h4>🎂 Bolos & Receitas</h4>
+            <p>Crie e edite suas fichas técnicas.</p>
+          </a>
+          <a href="#simulador" class="card home-card" data-target="simulador">
+            <h4>📊 Simulador de venda</h4>
+            <p>Estime custos e gere cotações rápidas.</p>
+          </a>
+          <a href="#registrar" class="card home-card" data-target="registrar">
+            <h4>🧾 Registrar Venda</h4>
+            <p>Lance uma nova venda confirmada.</p>
+          </a>
+          <a href="#vendas" class="card home-card" data-target="vendas">
+            <h4>💼 Vendas</h4>
+            <p>Acompanhe o calendário de entregas.</p>
+          </a>
+          <a href="#relatorios" class="card home-card" data-target="relatorios">
+            <h4>📈 Relatórios</h4>
+            <p>Analise o desempenho do seu negócio.</p>
+          </a>
+        </div>
+      </section>
+
+      <section id="compras" class="section page" data-page="compras">
+        <h3>Registro rápido do que foi comprado</h3>
+        <p class="muted">Digite o item comprado, a quantidade adquirida e o valor pago. Usamos esses dados para recalcular o custo unitário do estoque.</p>
+        <div class="cards-grid two">
+          <article class="card">
+            <h4 style="margin:0 0 8px">Registrar Compra / Entrada</h4>
+            <form id="form-purchase">
+              <label for="purchase-ing">Qual insumo foi comprado?</label>
+              <select id="purchase-ing" required></select>
+              <label for="purchase-qty">Quantidade adquirida (usar g, ml ou unidades)</label>
+              <input id="purchase-qty" type="number" step="any" placeholder="Ex: 5000 g" required />
+              <label for="purchase-price">Valor pago (R$)</label>
+              <input id="purchase-price" type="number" step="any" placeholder="Ex: 120.90" required />
+              <div class="actions">
+                <button class="btn" type="submit">Salvar compra</button>
+              </div>
+            </form>
+          </article>
+          <article class="card">
+            <h4 style="margin:0 0 8px">Histórico de compras</h4>
+            <div id="purchases-list" class="muted">— vazio —</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="insumos" class="section page" data-page="insumos">
+        <h3>Cadastro de insumos</h3>
+        <div class="cards-grid two">
+          <article class="card">
+            <h4 style="margin:0 0 8px">Adicionar / atualizar insumo</h4>
+            <form id="form-ingredient">
+              <label for="ing-name">Nome</label>
+              <input id="ing-name" placeholder="Farinha de trigo" required />
+              <label for="ing-qty">Quantidade total disponível (g, ml ou unidades)</label>
+              <input id="ing-qty" type="number" step="any" placeholder="5000" required />
+              <label for="ing-unit">Unidade do estoque</label>
+              <select id="ing-unit">
+                <option value="g" selected>Gramas (g)</option>
+                <option value="ml">Mililitros (ml)</option>
+                <option value="un">Unidades (un)</option>
+              </select>
+              <label for="ing-price">Preço total pago pelo lote (R$)</label>
+              <input id="ing-price" type="number" step="any" placeholder="20.50" required />
+              <div class="actions">
+                <button class="btn" type="submit">Salvar insumo</button>
+                <button class="btn ghost" id="btn-clear-ing" type="button">Limpar</button>
+              </div>
+            </form>
+          </article>
+          <article class="card">
+            <h4 style="margin:0 0 8px">Estoque cadastrado</h4>
+            <table id="table-ingredients">
+              <thead><tr><th>Nome</th><th>Quantidade</th><th>Preço unitário</th><th></th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+
+      <section id="bolos" class="section page" data-page="bolos">
+        <h3>Bolos & fichas técnicas</h3>
+        <p class="muted">Crie uma receita, clique no botão “Adicionar ingrediente” para montar a ficha e salve. O painel lista todos os bolos prontos para cálculo.</p>
+        <div class="cards-grid two">
+          <article class="card">
+            <h4 style="margin:0 0 8px">Adicionar receita</h4>
+            <form id="form-recipe">
+              <label for="recipe-name">Nome da receita</label>
+              <input id="recipe-name" placeholder="Bolo de chocolate" required />
+              <label for="recipe-portion">Porção padrão (kg)</label>
+              <input id="recipe-portion" type="number" step="any" value="1" required />
+              <label for="recipe-price">Valor base (R$)</label>
+              <input id="recipe-price" type="number" step="any" placeholder="Ex: 120.00" required />
+              <label for="recipe-price-type">Tipo da venda</label>
+              <select id="recipe-price-type">
+                <option value="kg">Por quilo (kg)</option>
+                <option value="un">Por unidade (un)</option>
+              </select>
+              <label for="recipe-public">Disponível na loja para clientes?</label>
+              <select id="recipe-public">
+                <option value="false" selected>Não, apenas para uso interno</option>
+                <option value="true">Sim, mostrar na loja</option>
+              </select>
+              <label>Ingredientes desta receita</label>
+              <div id="recipe-ingredients" class="muted">— ainda sem ingredientes —</div>
+              <div class="row-inline">
+                <select id="add-recipe-ing"></select>
+                <input id="add-recipe-qty" placeholder="Quantidade (g, ml ou unidade)" />
+              </div>
+              <div class="actions" style="margin-top:12px">
+                <button id="btn-add-recipe-ing" class="btn ghost" type="button">Adicionar ingrediente</button>
+              </div>
+              <div class="actions">
+                <button class="btn" type="submit">Salvar receita</button>
+                <button class="btn ghost" id="btn-clear-recipe" type="button">Limpar</button>
+              </div>
+            </form>
+          </article>
+          <article class="card">
+            <h4 style="margin:0 0 8px">Receitas cadastradas</h4>
+            <table id="table-recipes"><thead><tr><th>Nome</th><th>Status</th><th>Valor base</th><th></th></tr></thead><tbody></tbody></table>
+          </article>
+        </div>
+      </section>
+
+      <section id="simulador" class="section page" data-page="simulador">
+        <h3>Simulador de venda (cotação rápida)</h3>
+        <p class="muted">Use esta aba apenas para estimar custo e gerar uma mensagem pronta para WhatsApp. Nada é salvo como venda real.</p>
+        <div class="cards-grid two">
+          <article class="card">
+            <h4 style="margin:0 0 8px">Calcular custo por pedido</h4>
+            <form id="form-order">
+              <label for="order-recipe">Receita</label>
+              <select id="order-recipe"></select>
+              <label for="order-kg">Quantidade vendida (kg ou unidades)</label>
+              <input id="order-kg" type="number" step="any" value="1" required />
+              <div class="actions">
+                <button class="btn" type="submit">Calcular custo</button>
+                <button class="btn ghost" id="btn-clear-order" type="button">Limpar</button>
+              </div>
+            </form>
+          </article>
+          <article class="card">
+            <h4 style="margin:0 0 8px">Resultado do pedido</h4>
+            <div id="order-result" class="muted">Preencha os campos e clique em calcular para ver o resumo.</div>
+            <button class="btn ghost" id="btn-copy-quote" type="button" style="margin-top:16px;width:100%">Copiar mensagem para WhatsApp</button>
+          </article>
+        </div>
+      </section>
+
+      <section id="registrar" class="section page" data-page="registrar">
+        <h3>Registrar venda</h3>
+        <p class="muted">Aqui sim salvamos a venda, baixamos insumos e alimentamos o relatório.</p>
+        <div class="cards-grid two">
+          <article class="card">
+            <h4 style="margin:0 0 8px">Lançar venda confirmada</h4>
+            <form id="form-sale">
+              <label for="sale-recipe">Receita</label>
+              <select id="sale-recipe"></select>
+              <label for="sale-customer">Cliente</label>
+              <input id="sale-customer" placeholder="Nome do cliente" required />
+              <label for="sale-delivery">Data de entrega</label>
+              <input id="sale-delivery" type="date" required />
+              <label for="sale-kg">Quantidade (kg ou unidades)</label>
+              <input id="sale-kg" type="number" step="any" value="1" required />
+              <div class="actions">
+                <button class="btn" type="submit">Registrar venda</button>
+                <button class="btn ghost" id="btn-clear-sale" type="button">Limpar</button>
+              </div>
+            </form>
+          </article>
+          <article class="card">
+            <h4 style="margin:0 0 8px">Resumo da venda</h4>
+            <div id="sale-result" class="muted">Preencha o formulário e registre para ver detalhes e custos aqui.</div>
+          </article>
+        </div>
+      </section>
+
+      <section id="vendas" class="section page" data-page="vendas">
+        <h3>Vendas realizadas</h3>
+        <p class="muted">Calendário de entregas e lista detalhada para acompanhar o que já foi feito ou não.</p>
+        <div class="cards-grid two">
+          <article class="card calendar-card">
+            <div class="calendar-controls">
+              <button id="calendar-prev" type="button">‹</button>
+              <div class="calendar-label" id="calendar-label">Mês atual</div>
+              <button id="calendar-next" type="button">›</button>
+            </div>
+            <div class="calendar-weekdays">
+              <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sáb</span>
+            </div>
+            <div id="sales-calendar" class="calendar-grid"></div>
+            <div id="calendar-day-details" class="calendar-day-details muted">Selecione um dia para ver as entregas programadas.</div>
+          </article>
+        </div>
+        <article class="card" style="margin-top:16px">
+          <table id="table-sales">
+            <thead>
+              <tr>
+                <th>Cliente</th>
+                <th>Receita</th>
+                <th>Entrega</th>
+                <th>Quantidade (kg/un)</th>
+                <th>Preço venda</th>
+                <th>Custo</th>
+                <th>Lucro</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="8" class="muted">Nenhuma venda registrada ainda.</td></tr>
+            </tbody>
+          </table>
+        </article>
+      </section>
+
+      <section id="relatorios" class="section page" data-page="relatorios">
+        <h3>Relatório Mensal</h3>
+        <p class="muted">Selecione o mês e o ano para visualizar um resumo consolidado das vendas, custos e lucros.</p>
+        <div class="card">
+          <div class="report-filters">
+            <div>
+              <label for="report-month">Mês</label>
+              <select id="report-month"></select>
+            </div>
+            <div>
+              <label for="report-year">Ano</label>
+              <select id="report-year"></select>
+            </div>
+          </div>
+        </div>
+        <div id="report-summary" class="report-summary">
+          <div class="card"><h4>Faturamento</h4><p id="report-revenue">R$ 0,00</p></div>
+          <div class="card"><h4>Custo</h4><p id="report-cost">R$ 0,00</p></div>
+          <div class="card"><h4>Lucro</h4><p id="report-profit">R$ 0,00</p></div>
+        </div>
+        <div class="cards-grid two">
+          <article class="card">
+            <h4 style="margin:0 0 8px">Produtos Vendidos no Mês</h4>
+            <table id="report-table-products">
+              <thead><tr><th>Produto</th><th>Qtd. Vendida</th><th>Faturamento</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </article>
+          <article class="card">
+            <h4 style="margin:0 0 8px">Insumos Utilizados no Mês</h4>
+            <table id="report-table-ingredients">
+              <thead><tr><th>Insumo</th><th>Qtd. Utilizada</th><th>Custo Total</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </article>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+<!-- ====== SCRIPT (usa Firebase modular via CDN) ====== -->
+<script type="module">
+const firebaseConfig = {
+  apiKey: "AIzaSyDg83oO_NjNU_Tz9AKTfmsxYJY7vSkijyM",
+  authDomain: "achadinhos-deliciosos.firebaseapp.com",
+  projectId: "achadinhos-deliciosos",
+  storageBucket: "achadinhos-deliciosos.appspot.com",
+  messagingSenderId: "782203131056",
+  appId: "1:782203131056:web:2c832412f81157cac1d775"
+}
+
+if (!firebaseConfig) {
+  console.warn('Firebase config not set. Firestore operations will not run. Paste your firebaseConfig object in the script.');
+}
+
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot, updateDoc, query, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+let db = null;
+let auth = null;
+if (firebaseConfig) {
+  const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  db = getFirestore(app);
+}
+
+// ---------- Helpers: Firestore wrappers (graceful fallback to localStorage) ----------
+const useLocalFallback = !db;
+const storageKey = 'controle_demo_storage_v1';
+function saveLocal(collectionName, docs) {
+  const all = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  all[collectionName] = docs;
+  localStorage.setItem(storageKey, JSON.stringify(all));
+}
+function loadLocal(collectionName) {
+  const all = JSON.parse(localStorage.getItem(storageKey) || '{}');
+  return all[collectionName] || [];
+}
+
+function getCollectionPath(collectionName) {
+  if (useLocalFallback || !CURRENT_USER || !CURRENT_USER.uid) {
+    return collectionName; // Fallback para coleção global
+  }
+  // Todos os dados de um profissional são armazenados em uma subcoleção do seu documento de usuário
+  return `users/${CURRENT_USER.uid}/${collectionName}`;
+}
+
+async function addItem(collectionName, data) {
+  const path = getCollectionPath(collectionName);
+  if (useLocalFallback) {
+    const arr = loadLocal(path);
+    data._id = Date.now().toString();
+    arr.push(data);
+    saveLocal(path, arr);
+    return data;
+  }
+  const col = collection(db, path);
+  const ref = await addDoc(col, data);
+  data._id = ref.id;
+  return data;
+}
+
+async function setItem(collectionName, id, data) {
+  const path = getCollectionPath(collectionName);
+  if (useLocalFallback) {
+    const arr = loadLocal(path);
+    const idx = arr.findIndex(x => x._id === id);
+    if (idx >= 0) arr[idx] = {...arr[idx], ...data};
+    saveLocal(path, arr);
+    return arr[idx];
+  }
+  const ref = doc(db, path, id);
+  await setDoc(ref, data, {merge: true});
+  return {...data, _id: id};
+}
+
+async function listItems(collectionName) {
+  const path = getCollectionPath(collectionName);
+  if (useLocalFallback) return loadLocal(path);
+  const snapshot = await getDocs(collection(db, path));
+  const arr = [];
+  snapshot.forEach(d => arr.push({...d.data(), _id: d.id}));
+  return arr;
+}
+
+// ---------- App State & UI ----------
+let CURRENT_USER = null;
+const els = {
+  pageTitle: document.getElementById('page-title'),
+  formIngredient: document.getElementById('form-ingredient'),
+  ingName: document.getElementById('ing-name'),
+  ingQty: document.getElementById('ing-qty'),
+  ingUnit: document.getElementById('ing-unit'),
+  ingPrice: document.getElementById('ing-price'),
+  tableIngredients: document.querySelector('#table-ingredients tbody'),
+  purchaseIng: document.getElementById('purchase-ing'),
+  purchaseQty: document.getElementById('purchase-qty'),
+  purchasePrice: document.getElementById('purchase-price'),
+  purchasesList: document.getElementById('purchases-list'),
+  formPurchase: document.getElementById('form-purchase'),
+  formRecipe: document.getElementById('form-recipe'),
+  recipeName: document.getElementById('recipe-name'),
+  recipePortion: document.getElementById('recipe-portion'),
+  recipePrice: document.getElementById('recipe-price'),
+  recipePriceType: document.getElementById('recipe-price-type'),
+  recipeIngredientsDiv: document.getElementById('recipe-ingredients'),
+  addRecipeIng: document.getElementById('add-recipe-ing'),
+  addRecipeQty: document.getElementById('add-recipe-qty'),
+  btnAddRecipeIng: document.getElementById('btn-add-recipe-ing'),
+  tableRecipes: document.querySelector('#table-recipes tbody'),
+  orderRecipe: document.getElementById('order-recipe'),
+  orderKg: document.getElementById('order-kg'),
+  orderResult: document.getElementById('order-result'),
+  formOrder: document.getElementById('form-order'),
+  btnCopyQuote: document.getElementById('btn-copy-quote'),
+  saleForm: document.getElementById('form-sale'),
+  saleRecipe: document.getElementById('sale-recipe'),
+  saleCustomer: document.getElementById('sale-customer'),
+  saleDelivery: document.getElementById('sale-delivery'),
+  saleKg: document.getElementById('sale-kg'),
+  saleResult: document.getElementById('sale-result'),
+  navLinks: Array.from(document.querySelectorAll('.nav a')),
+  homeCardLinks: Array.from(document.querySelectorAll('.home-card')),
+  pages: Array.from(document.querySelectorAll('[data-page]')),
+  salesTableBody: document.querySelector('#table-sales tbody'),
+  calendarGrid: document.getElementById('sales-calendar'),
+  calendarLabel: document.getElementById('calendar-label'),
+  calendarDayDetails: document.getElementById('calendar-day-details'),
+  calendarPrev: document.getElementById('calendar-prev'),
+  calendarNext: document.getElementById('calendar-next'),
+  mobileNavSelect: document.getElementById('mobile-nav-select'),
+  reportMonth: document.getElementById('report-month'),
+  reportYear: document.getElementById('report-year'),
+  reportRevenue: document.getElementById('report-revenue'),
+  reportCost: document.getElementById('report-cost'),
+  reportProfit: document.getElementById('report-profit'),
+  reportTableProducts: document.querySelector('#report-table-products tbody'),
+  reportTableIngredients: document.querySelector('#report-table-ingredients tbody'),
+  btnLogout: document.getElementById('btn-logout'),
+  userInfo: document.getElementById('user-info'),
+};
+
+const DEFAULT_PAGE = 'home';
+let LAST_QUOTE_MESSAGE = '';
+const calendarState = {
+  current: new Date(),
+  selectedKey: null
+};
+
+function activatePage(pageId = DEFAULT_PAGE){
+  const exists = els.pages.some(page => page.dataset.page === pageId);
+  const targetPage = exists ? pageId : DEFAULT_PAGE;
+
+  els.pages.forEach(page => page.classList.toggle('active', page.dataset.page === targetPage));
+  els.navLinks.forEach(link => link.classList.toggle('active', link.dataset.target === targetPage));
+  if(els.mobileNavSelect.value !== targetPage){
+    els.mobileNavSelect.value = targetPage;
+  }
+  const activeLink = els.navLinks.find(link => link.dataset.target === targetPage);
+  if (els.pageTitle) {
+    els.pageTitle.textContent = activeLink ? activeLink.textContent.replace(/^[^\w\s]+/, '').trim() : 'Painel';
+  }
+}
+
+function handleNavClick(ev){
+  ev.preventDefault();
+  const target = ev.currentTarget.dataset.target || DEFAULT_PAGE;
+  activatePage(target);
+  if (window.location.hash !== `#${target}`) {
+    history.replaceState(null, '', `#${target}`);
+  }
+}
+
+els.navLinks.forEach(link => link.addEventListener('click', handleNavClick));
+els.homeCardLinks.forEach(link => link.addEventListener('click', handleNavClick));
+
+els.mobileNavSelect.addEventListener('change', (ev) => {
+  const target = ev.target.value;
+  activatePage(target);
+  history.replaceState(null, '', `#${target}`);
+});
+
+window.addEventListener('hashchange', () => {
+  const page = (window.location.hash || '').replace('#','') || DEFAULT_PAGE;
+  activatePage(page);
+});
+
+function initializeAppForUser() {
+  activatePage((window.location.hash || '').replace('#','') || DEFAULT_PAGE);
+  refreshAll();
+}
+
+// in-memory caches
+let INGREDIENTS = [];
+let RECIPES = [];
+let PURCHASES = [];
+let ORDERS = [];
+
+async function refreshAll() {
+  if (!CURRENT_USER) {
+    console.log("Nenhum usuário logado, não é possível carregar os dados.");
+    return;
+  }
+
+  INGREDIENTS = await listItems('ingredients');
+  RECIPES = await listItems('recipes');
+  PURCHASES = await listItems('purchases');
+  ORDERS = await listItems('orders');
+  renderIngredients();
+  renderIngredientsSelects();
+  renderRecipes();
+  renderPurchases();
+  renderSales();
+  populateReportFilter();
+}
+
+function toBRL(v){ return Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
+const VALID_UNITS = ['g','ml','un'];
+function normalizeUnit(unit){
+  const normalized = (unit || '').toString().trim().toLowerCase();
+  return VALID_UNITS.includes(normalized) ? normalized : 'g';
+}
+function formatMeasure(value, unit){
+  const normalized = normalizeUnit(unit);
+  const suffix = normalized === 'ml' ? 'ml' : (normalized === 'un' ? 'un' : 'g');
+  const amount = Number(value || 0);
+  if (!Number.isFinite(amount)) return `0 ${suffix}`;
+  const formatted = amount % 1 === 0
+    ? amount.toLocaleString('pt-BR')
+    : amount.toLocaleString('pt-BR',{minimumFractionDigits:2, maximumFractionDigits:2});
+  return `${formatted} ${suffix}`;
+}
+function pad(num){ return String(num).padStart(2,'0'); }
+function formatDateKey(value){
+  if(!value) return null;
+  if(value instanceof Date){
+    return `${value.getFullYear()}-${pad(value.getMonth()+1)}-${pad(value.getDate())}`;
+  }
+  const d = new Date(value);
+  if(Number.isNaN(d.getTime())) return null;
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+}
+
+function getRecipePriceInfo(recipe){
+  return {
+    base: Number(recipe?.preco_base || 0),
+    type: recipe?.preco_tipo || 'kg'
+  };
+}
+
+function calculateRecipePrice(recipe, quantity){
+  const info = getRecipePriceInfo(recipe);
+  const qty = Number(quantity) || 0;
+  return info.base * qty;
+}
+
+function formatQuantityDisplay(quantity, type){
+  const qty = Number(quantity) || 0;
+  const suffix = type === 'un' ? 'un' : 'kg';
+  return `${qty.toLocaleString('pt-BR',{minimumFractionDigits:0, maximumFractionDigits:2})} ${suffix}`;
+}
+
+function formatQuantityForMessage(quantity, type){
+  const qty = Number(quantity) || 0;
+  if(type === 'un'){
+    return `${qty.toLocaleString('pt-BR',{maximumFractionDigits:2})} un`;
+  }
+  if(qty >= 1){
+    return `${qty.toLocaleString('pt-BR',{maximumFractionDigits:2})} kg`;
+  }
+  return `${(qty*1000).toFixed(0)} g`;
+}
+
+async function copyToClipboard(text){
+  if(!text) return false;
+  if(navigator.clipboard && window.isSecureContext){
+    try{
+      await navigator.clipboard.writeText(text);
+      return true;
+    }catch(err){
+      console.warn('Clipboard API falhou, usando fallback', err);
+    }
+  }
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.style.position = 'fixed';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
+  try{
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    return true;
+  }catch(err){
+    document.body.removeChild(textarea);
+    return false;
+  }
+}
+
+function renderIngredients(){
+  els.tableIngredients.innerHTML = '';
+  INGREDIENTS.forEach(i => {
+    const tr = document.createElement('tr');
+    const priceUnit = (i.preco_unitario !== undefined) ? i.preco_unitario : (i.preco_total && i.quantidade_total ? Number(i.preco_total)/Number(i.quantidade_total):0);
+    tr.innerHTML = `
+      <td>${i.nome}</td>
+      <td>${formatMeasure(i.quantidade_total, i.unidade)}</td>
+      <td>${priceUnit.toLocaleString('pt-BR',{style:'currency',currency:'BRL', minimumFractionDigits:4, maximumFractionDigits:4})}</td>
+      <td><button class="btn ghost" type="button" data-id="${i._id}">Editar</button></td>
+    `;
+    els.tableIngredients.appendChild(tr);
+  });
+}
+
+function renderIngredientsSelects(){
+  const selTargets = [els.purchaseIng, els.addRecipeIng];
+  selTargets.forEach(s=>{ if(s) s.innerHTML = '' });
+  INGREDIENTS.forEach(i => {
+    const opt = document.createElement('option'); opt.value = i._id; opt.textContent = i.nome;
+    if(els.purchaseIng) els.purchaseIng.appendChild(opt);
+    if(els.addRecipeIng) els.addRecipeIng.appendChild(opt.cloneNode(true));
+  });
+  // recipes select updated later
+}
+
+function renderRecipes(){
+  els.tableRecipes.innerHTML = '';
+  if(els.orderRecipe) els.orderRecipe.innerHTML = '';
+  if(els.saleRecipe) els.saleRecipe.innerHTML = '';
+  RECIPES.forEach(r=>{
+    const tr = document.createElement('tr');
+    const priceInfo = getRecipePriceInfo(r);
+    const status = r.publica ? '<span style="color: #16a34a;">Na loja</span>' : '<span style="color: var(--muted);">Interno</span>';
+    const priceLabel = `${toBRL(priceInfo.base)} / ${priceInfo.type === 'kg' ? 'kg' : 'un'}`;
+    tr.innerHTML = `<td>${r.nome}</td>
+                    <td>${status}</td>
+                    <td>${priceLabel}</td><td><button class="btn ghost" type="button" data-id="${r._id}">Editar</button></td>`;
+    els.tableRecipes.appendChild(tr);
+    const opt = document.createElement('option'); opt.value = r._id; opt.textContent = r.nome;
+    if(els.orderRecipe) els.orderRecipe.appendChild(opt.cloneNode(true));
+    if(els.saleRecipe) els.saleRecipe.appendChild(opt);
+  });
+}
+
+function renderPurchases(){
+  if (!PURCHASES.length) { els.purchasesList.textContent = '— vazio —'; return }
+  els.purchasesList.innerHTML = PURCHASES.map(p=> `${new Date(p.createdAt||p._id*1).toLocaleString()} — ${p.nome} — ${formatMeasure(p.quantidade, p.unidade)} — ${toBRL(p.preco)}`).join('<br>');
+}
+
+calendarState.selectedKey = formatDateKey(new Date());
+
+function renderSales(){
+  if(!els.salesTableBody) return;
+  els.salesTableBody.innerHTML = '';
+  if(!ORDERS.length){
+    els.salesTableBody.innerHTML = `<tr><td colspan="8" class="muted">Ainda não há vendas registradas.</td></tr>`;
+  } else {
+    const sorted = [...ORDERS].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    sorted.forEach(order=>{
+      const lucro = Number(order.priceSell||0) - Number(order.totalCost||0);
+      const deliveryLabel = formatDelivery(order.deliveryDate);
+      const status = order.status === 'done' ? 'done' : 'pending';
+      const qtyLabel = formatQuantityDisplay(order.kg || 0, order.priceType || 'kg');
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${order.customer || '—'}</td>
+        <td>${order.recipe_name || '—'}</td>
+        <td>${deliveryLabel}</td>
+        <td>${qtyLabel}</td>
+        <td>${toBRL(order.priceSell||0)}</td>
+        <td>${toBRL(order.totalCost||0)}</td>
+        <td>${toBRL(lucro)}</td>
+        <td><button type="button" class="status-chip ${status}" data-id="${order._id}">${status === 'done' ? 'Feito' : 'Pendente'}</button></td>
+      `;
+      els.salesTableBody.appendChild(tr);
+    });
+  }
+  if(!calendarState.selectedKey){
+    calendarState.selectedKey = formatDateKey(new Date());
+  }
+  renderCalendar();
+  renderCalendarDayDetails(calendarState.selectedKey);
+  populateReportFilter();
+}
+
+function renderCalendar(){
+  if(!els.calendarGrid) return;
+  const grid = els.calendarGrid;
+  grid.innerHTML = '';
+  const current = calendarState.current;
+  const year = current.getFullYear();
+  const month = current.getMonth();
+  const firstWeekday = new Date(year, month, 1).getDay();
+  const totalDays = new Date(year, month + 1, 0).getDate();
+
+  for(let i=0;i<firstWeekday;i++){
+    const filler = document.createElement('div');
+    filler.className = 'calendar-day empty';
+    grid.appendChild(filler);
+  }
+
+  for(let day=1; day<=totalDays; day++){
+    const key = `${year}-${pad(month+1)}-${pad(day)}`;
+    const dayOrders = ORDERS.filter(o => formatDateKey(o.deliveryDate) === key);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'calendar-day';
+    if(dayOrders.length){
+      btn.classList.add('has-delivery');
+      const pendingCount = dayOrders.filter(o => o.status !== 'done').length;
+      if(pendingCount>0){
+        btn.classList.add('pending');
+      } else {
+        btn.classList.add('done');
+      }
+      btn.innerHTML = `<span class="day-num">${day}</span><span class="badge">${dayOrders.length}</span>`;
+    } else {
+      btn.innerHTML = `<span class="day-num">${day}</span>`;
+    }
+    if(calendarState.selectedKey === key){
+      btn.classList.add('selected');
+    }
+    btn.dataset.dateKey = key;
+    btn.addEventListener('click', ()=>{
+      calendarState.selectedKey = key;
+      renderCalendar();
+      renderCalendarDayDetails(key);
+    });
+    grid.appendChild(btn);
+  }
+
+  if(els.calendarLabel){
+    const labelDate = new Date(year, month, 1);
+    els.calendarLabel.textContent = labelDate.toLocaleDateString('pt-BR',{month:'long',year:'numeric'});
+  }
+}
+
+function renderCalendarDayDetails(dateKey){
+  if(!els.calendarDayDetails) return;
+  if(!dateKey){
+    els.calendarDayDetails.innerHTML = 'Selecione um dia para ver as entregas programadas.';
+    return;
+  }
+  const items = ORDERS.filter(o => formatDateKey(o.deliveryDate) === dateKey);
+  if(!items.length){
+    const display = formatDelivery(dateKey) || dateKey;
+    els.calendarDayDetails.innerHTML = `<h4>${display}</h4><p class="muted">Nenhuma entrega programada.</p>`;
+    return;
+  }
+  const displayDate = formatDelivery(dateKey) || dateKey;
+  const list = items.map(item=>{
+    const status = item.status === 'done' ? 'done' : 'pending';
+    const statusLabel = status === 'done' ? 'Feito' : 'Pendente';
+    const actionLabel = status === 'done' ? 'Marcar como pendente' : 'Marcar como feito';
+    const lucro = Number(item.priceSell||0) - Number(item.totalCost||0);
+    return `
+      <li>
+        <strong>${item.recipe_name || 'Receita'}</strong>
+        <span>${item.customer || 'Cliente não informado'} · ${formatQuantityDisplay(item.kg || 0, item.priceType || 'kg')}</span>
+        <span>${toBRL(item.priceSell||0)} venda • ${toBRL(item.totalCost||0)} custo • lucro ${toBRL(lucro)}</span>
+        <button type="button" class="status-chip ${status}" data-id="${item._id}">${actionLabel}</button>
+        <small class="muted">${statusLabel}</small>
+      </li>
+    `;
+  }).join('');
+  els.calendarDayDetails.innerHTML = `
+    <h4>${displayDate}</h4>
+    <ul class="day-orders">${list}</ul>
+  `;
+}
+
+function populateReportFilter(){
+  if(!els.reportMonth || !els.reportYear) return;
+  const availableYears = new Set();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  availableYears.add(currentYear);
+  availableYears.add(currentYear + 1);
+  availableYears.add(currentYear + 2);
+  ORDERS.forEach(order => {
+    if(order.deliveryDate){
+      const d = new Date(order.deliveryDate);
+      if(!isNaN(d.getTime())){
+        availableYears.add(d.getFullYear());
+      }
+    }
+  });
+
+  const sortedYears = Array.from(availableYears).sort((a, b) => a - b);
+  els.reportYear.innerHTML = sortedYears.map(y => `<option value="${y}">${y}</option>`).join('');
+  els.reportYear.value = currentYear;
+
+  els.reportMonth.innerHTML = '';
+  for(let i = 1; i <= 12; i++){
+    const monthDate = new Date(currentYear, i - 1, 1);
+    const label = monthDate.toLocaleDateString('pt-BR', { month: 'long' });
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+    els.reportMonth.appendChild(opt);
+  }
+  els.reportMonth.value = currentMonth;
+
+  triggerReportRender();
+}
+
+function triggerReportRender(){
+  if(!els.reportMonth || !els.reportYear) return;
+  const year = els.reportYear.value;
+  const month = els.reportMonth.value;
+  if(year && month){
+    renderReport(`${year}-${pad(month)}`);
+  }
+}
+
+function renderReport(monthYearKey){
+  if(!monthYearKey){
+    // Clear fields if no key
+    els.reportTableProducts.innerHTML = `<tr><td colspan="3" class="muted">Nenhum dado para o período.</td></tr>`;
+    els.reportTableIngredients.innerHTML = `<tr><td colspan="3" class="muted">Nenhum dado para o período.</td></tr>`;
+    return;
+  }
+
+  const relevantOrders = ORDERS.filter(o => o.deliveryDate && o.deliveryDate.startsWith(monthYearKey));
+
+  let totalRevenue = 0;
+  let totalCost = 0;
+  const soldProducts = {};
+  const usedIngredients = {};
+
+  relevantOrders.forEach(order => {
+    totalRevenue += Number(order.priceSell || 0);
+    totalCost += Number(order.totalCost || 0);
+
+    // Aggregate sold products
+    if(!soldProducts[order.recipe_id]) {
+      soldProducts[order.recipe_id] = { name: order.recipe_name, quantity: 0, revenue: 0, type: order.priceType || 'kg' };
+    }
+    soldProducts[order.recipe_id].quantity += Number(order.kg || 0);
+    soldProducts[order.recipe_id].revenue += Number(order.priceSell || 0);
+
+    // Aggregate used ingredients
+    const recipe = RECIPES.find(r => r._id === order.recipe_id);
+    if(recipe && recipe.ingredientes){
+      const scale = (order.kg || 1) / (recipe.porcao_padrao_kg || 1);
+      recipe.ingredientes.forEach(item => {
+        const ing = INGREDIENTS.find(i => i._id === item.ingrediente_id);
+        if(!ing) return;
+        const needed = Number(item.quantidade) * scale;
+        const cost = needed * (ing.preco_unitario || 0);
+
+        if(!usedIngredients[ing._id]){
+          usedIngredients[ing._id] = { name: ing.nome, quantity: 0, cost: 0, unit: ing.unidade };
+        }
+        usedIngredients[ing._id].quantity += needed;
+        usedIngredients[ing._id].cost += cost;
+      });
+    }
+  });
+
+  els.reportRevenue.textContent = toBRL(totalRevenue);
+  els.reportCost.textContent = toBRL(totalCost);
+  els.reportProfit.textContent = toBRL(totalRevenue - totalCost);
+
+  els.reportTableProducts.innerHTML = Object.values(soldProducts).map(p => `<tr><td>${p.name}</td><td>${formatQuantityDisplay(p.quantity, p.type)}</td><td>${toBRL(p.revenue)}</td></tr>`).join('') || `<tr><td colspan="3" class="muted">Nenhuma venda no período.</td></tr>`;
+  els.reportTableIngredients.innerHTML = Object.values(usedIngredients).map(i => `<tr><td>${i.name}</td><td>${formatMeasure(i.quantity, i.unit)}</td><td>${toBRL(i.cost)}</td></tr>`).join('') || `<tr><td colspan="3" class="muted">Nenhum insumo utilizado.</td></tr>`;
+}
+
+if(els.reportMonth && els.reportYear){
+  els.reportMonth.addEventListener('change', triggerReportRender);
+  els.reportYear.addEventListener('change', triggerReportRender);
+}
+
+function shiftCalendarMonth(delta){
+  const base = calendarState.current || new Date();
+  calendarState.current = new Date(base.getFullYear(), base.getMonth()+delta, 1);
+  renderCalendar();
+  renderCalendarDayDetails(calendarState.selectedKey);
+}
+
+if(els.calendarPrev){
+  els.calendarPrev.addEventListener('click', ()=>shiftCalendarMonth(-1));
+}
+
+if(els.calendarNext){
+  els.calendarNext.addEventListener('click', ()=>shiftCalendarMonth(1));
+}
+
+document.addEventListener('click', async (ev)=>{
+  const chip = ev.target.closest('.status-chip');
+  if(!chip) return;
+  const orderId = chip.dataset.id;
+  if(!orderId) return;
+  const order = ORDERS.find(o=>o._id===orderId);
+  if(!order) return;
+  const nextStatus = order.status === 'done' ? 'pending' : 'done';
+  await setItem('orders', orderId, {status: nextStatus});
+  await refreshAll();
+});
+
+function formatDelivery(value){
+  if(!value) return '—';
+  const d = new Date(value);
+  if(Number.isNaN(d.getTime())){
+    return value;
+  }
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+}
+
+// ---------- Ingredient form ----------
+els.formIngredient.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const nome = els.ingName.value.trim();
+  const quantidade_total = Number(els.ingQty.value);
+  const unidade = normalizeUnit(els.ingUnit.value);
+  const preco_total = Number(els.ingPrice.value);
+  // preco unitario calculado
+  const preco_unitario = (quantidade_total>0) ? preco_total/quantidade_total : 0;
+  // if exists, update
+  const existing = INGREDIENTS.find(x=>x.nome.toLowerCase()===nome.toLowerCase());
+  if (existing) {
+    await setItem('ingredients', existing._id, {nome, quantidade_total, unidade, preco_total, preco_unitario});
+  } else {
+    await addItem('ingredients', {nome, quantidade_total, unidade, preco_total, preco_unitario});
+  }
+  await refreshAll();
+  els.formIngredient.reset();
+});
+
+document.getElementById('btn-clear-ing').addEventListener('click',()=>els.formIngredient.reset());
+
+// edit button handler (table)
+els.tableIngredients.addEventListener('click', async (ev)=>{
+  const btn = ev.target.closest('button'); if(!btn) return;
+  const id = btn.dataset.id;
+  const ing = INGREDIENTS.find(x=>x._id===id);
+  if(!ing) return;
+  els.ingName.value = ing.nome;
+  els.ingQty.value = ing.quantidade_total;
+  els.ingUnit.value = normalizeUnit(ing.unidade);
+  els.ingPrice.value = ing.preco_total;
+});
+
+// ---------- Purchases (add stock) ----------
+els.formPurchase.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const ingId = els.purchaseIng.value;
+  const quantidade = Number(els.purchaseQty.value);
+  const preco = Number(els.purchasePrice.value);
+  const ing = INGREDIENTS.find(x=>x._id===ingId);
+  if(!ing){ alert('Escolha um insumo'); return }
+  // update estoque: nova quantidade_total = antiga + quantidade
+  const newQty = Number(ing.quantidade_total) + quantidade;
+  // recompute preco_unitario: consideramos que o preco informado é do lote comprado
+  // assumimos preco_total acumulado = (preco antigo em R$) + preco novo
+  const oldTotalValue = (ing.preco_total || 0);
+  const newTotalValue = oldTotalValue + preco;
+  const newPrecoUnit = newQty>0 ? newTotalValue / newQty : 0;
+  await setItem('ingredients', ingId, {quantidade_total: newQty, preco_total: newTotalValue, preco_unitario: newPrecoUnit});
+  // salvar registro de compra
+  const purchaseRecord = {insumo_id: ingId, nome: ing.nome, quantidade, unidade: normalizeUnit(ing.unidade), preco, createdAt: Date.now()};
+  await addItem('purchases', purchaseRecord);
+  await refreshAll();
+  els.formPurchase.reset();
+});
+
+// ---------- Recipes ----------
+function renderRecipeIngredientsUI(recipe){
+  els.recipeIngredientsDiv.innerHTML = '';
+  if(!recipe || !(recipe.ingredientes||[]).length){
+    els.recipeIngredientsDiv.innerHTML = `<p class="muted">Adicione os ingredientes e informe as quantidades em gramas (g), mililitros (ml) ou unidades (un) para esta porção.</p>`;
+    return;
+  }
+  recipe.ingredientes.forEach((it,idx)=>{
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.style.marginTop = '6px';
+    row.innerHTML = `<div style="flex:1">${it.nome} — ${formatMeasure(it.quantidade, it.unidade)}</div><div><button class='btn ghost' type="button" data-idx='${idx}'>Remover</button></div>`;
+    els.recipeIngredientsDiv.appendChild(row);
+  });
+}
+
+let EDITING_RECIPE = null;
+let TEMP_RECIPE = {ingredientes:[]};
+
+els.btnAddRecipeIng.addEventListener('click', ()=>{
+  const ingId = els.addRecipeIng.value; const q = Number(els.addRecipeQty.value);
+  const ing = INGREDIENTS.find(x=>x._id===ingId); if(!ing){ alert('Selecione ingrediente'); return }
+  TEMP_RECIPE.ingredientes.push({ingrediente_id:ingId, nome:ing.nome, quantidade:q, unidade: normalizeUnit(ing.unidade)});
+  renderRecipeIngredientsUI(TEMP_RECIPE);
+  els.addRecipeQty.value='';
+});
+
+els.formRecipe.addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  const nome = els.recipeName.value.trim(); const porcao = Number(els.recipePortion.value) || 1;
+  const precoBase = Number(els.recipePrice.value) || 0;
+  const precoTipo = els.recipePriceType.value || 'kg';
+  const isPublic = document.getElementById('recipe-public').value === 'true';
+  const ingredientesNormalizados = (TEMP_RECIPE.ingredientes || []).map(item=>{
+    const fallbackIng = INGREDIENTS.find(x=>x._id === item.ingrediente_id);
+    return {
+      ...item,
+      unidade: normalizeUnit(item.unidade || (fallbackIng && fallbackIng.unidade))
+    };
+  });
+  const payload = {nome, porcao_padrao_kg:porcao, preco_base:precoBase, preco_tipo:precoTipo, publica: isPublic, ingredientes: ingredientesNormalizados};
+  if (EDITING_RECIPE){
+    await setItem('recipes', EDITING_RECIPE._id, payload);
+    EDITING_RECIPE = null;
+  } else {
+    await addItem('recipes', payload);
+  }
+  TEMP_RECIPE = {ingredientes:[]};
+  renderRecipeIngredientsUI(null);
+  els.formRecipe.reset();
+  if(els.recipePortion) els.recipePortion.value = 1;
+  if(els.recipePriceType) els.recipePriceType.value = 'kg';
+  await refreshAll();
+});
+
+document.getElementById('btn-clear-recipe').addEventListener('click', ()=>{TEMP_RECIPE={ingredientes:[]}; renderRecipeIngredientsUI(null); els.formRecipe.reset();});
+
+// recipe table edit (not fully implemented for brevity)
+els.tableRecipes.addEventListener('click', (ev)=>{
+  const btn = ev.target.closest('button'); if(!btn) return; const id = btn.dataset.id;
+  const r = RECIPES.find(x=>x._id===id); if(!r) return;
+  EDITING_RECIPE = r; TEMP_RECIPE = {ingredientes: (r.ingredientes || []).map(it=>({...it, unidade: normalizeUnit(it.unidade)}))};
+  els.recipeName.value = r.nome; els.recipePortion.value = r.porcao_padrao_kg;
+  if(els.recipePrice) els.recipePrice.value = r.preco_base || 0;
+  if(els.recipePriceType) els.recipePriceType.value = r.preco_tipo || 'kg';
+  document.getElementById('recipe-public').value = r.publica ? 'true' : 'false';
+  renderRecipeIngredientsUI(TEMP_RECIPE);
+});
+
+// remove recipe ingredient (delegation)
+els.recipeIngredientsDiv.addEventListener('click',(ev)=>{
+  const btn = ev.target.closest('button'); if(!btn) return; const idx = Number(btn.dataset.idx);
+  TEMP_RECIPE.ingredientes.splice(idx,1); renderRecipeIngredientsUI(TEMP_RECIPE);
+});
+
+// ---------- Orders / calculation ----------
+els.formOrder.addEventListener('submit',(ev)=>{
+  ev.preventDefault();
+  const recipeId = els.orderRecipe.value;
+  const quantity = Number(els.orderKg.value) || 1;
+  const recipe = RECIPES.find(r=>r._id===recipeId); if(!recipe){ alert('Escolha uma receita'); return }
+  // For each ingredient, compute needed quantity scaled by kg / porcao_padrao_kg
+  const scale = quantity / (recipe.porcao_padrao_kg || 1);
+  const details = recipe.ingredientes.map(it=>{
+    const ing = INGREDIENTS.find(x=>x._id===it.ingrediente_id) || {};
+    const needed = Number(it.quantidade) * scale; // same units as recipe
+    const unit = normalizeUnit(it.unidade || ing.unidade);
+    const unitPrice = Number(ing.preco_unitario || 0);
+    // but be careful with units: assume recipe uses same unit as stock (e.g., grams e unidades)
+    const cost = needed * unitPrice;
+    return {id: ing._id || it.ingrediente_id, nome: it.nome, needed, unidade: unit, unitPrice, cost};
+  });
+  const totalCost = details.reduce((s,d)=>s + d.cost,0);
+  const priceSell = calculateRecipePrice(recipe, quantity);
+  const lucro = priceSell - totalCost;
+  const priceInfo = getRecipePriceInfo(recipe);
+  const quantityLabel = formatQuantityDisplay(quantity, priceInfo.type);
+
+  // render result
+  els.orderResult.innerHTML = `
+    <h3>Resumo do pedido</h3>
+    <div class="small muted"><strong>Receita:</strong> ${recipe.nome} — ${quantityLabel} · Valor configurado: ${toBRL(priceInfo.base)} / ${priceInfo.type === 'un' ? 'un' : 'kg'}</div>
+    <table><thead><tr><th>Insumo</th><th>Quantidade (g/ml/un)</th><th>Custo</th></tr></thead><tbody>
+    ${details.map(d=>`<tr><td>${d.nome}</td><td>${formatMeasure(d.needed, d.unidade)}</td><td>${toBRL(d.cost)}</td></tr>`).join('')}
+    </tbody></table>
+    <div class="small" style="display:flex;flex-wrap:wrap;gap:16px;margin-top:12px">
+      <span><strong>Custo total:</strong> ${toBRL(totalCost)}</span>
+      <span><strong>Preço de venda:</strong> ${toBRL(priceSell)}</span>
+      <span><strong>Lucro estimado:</strong> ${toBRL(lucro)} (${((lucro/Math.max(1,priceSell||1))*100).toFixed(1)}%)</span>
+    </div>
+  `;
+
+  const pesoTexto = formatQuantityForMessage(quantity, priceInfo.type);
+  LAST_QUOTE_MESSAGE = `✨ Achadinhos Deliciosos — Confeitaria Artesanal ✨
+
+Segue a simulação do seu pedido:
+
+• Produto: ${recipe.nome}
+• Peso: ${pesoTexto}
+• Valor: ${toBRL(priceSell)}
+
+Seu orçamento foi preparado com toda atenção aos detalhes, priorizando qualidade e refinamento.
+
+Estou à disposição para ajustes ou para confirmar o pedido. 🍰💛`;
+});
+
+if(els.btnCopyQuote){
+  els.btnCopyQuote.addEventListener('click', async ()=>{
+    if(!LAST_QUOTE_MESSAGE){
+      alert('Calcule um pedido para gerar a mensagem.');
+      return;
+    }
+    const success = await copyToClipboard(LAST_QUOTE_MESSAGE);
+    if(success){
+      const original = els.btnCopyQuote.textContent;
+      els.btnCopyQuote.textContent = 'Mensagem copiada!';
+      setTimeout(()=> els.btnCopyQuote.textContent = original, 2000);
+    } else {
+      alert('Não foi possível copiar automaticamente. Tente novamente.');
+    }
+  });
+}
+
+if(els.saleForm){
+  els.saleForm.addEventListener('submit', async (ev)=>{
+    ev.preventDefault();
+    const recipeId = els.saleRecipe.value;
+    const recipe = RECIPES.find(r=>r._id===recipeId);
+    if(!recipe){ alert('Escolha uma receita válida'); return; }
+    const customer = els.saleCustomer.value.trim();
+    if(!customer){ alert('Informe o nome do cliente'); return; }
+    const deliveryDate = els.saleDelivery.value;
+    if(!deliveryDate){ alert('Informe a data de entrega'); return; }
+    const quantity = Number(els.saleKg.value) || 1;
+    const priceInfo = getRecipePriceInfo(recipe);
+    const priceSell = calculateRecipePrice(recipe, quantity);
+    const scale = quantity / (recipe.porcao_padrao_kg || 1);
+    const details = recipe.ingredientes.map(it=>{
+      const ing = INGREDIENTS.find(x=>x._id===it.ingrediente_id) || {};
+      const needed = Number(it.quantidade) * scale;
+      const unit = normalizeUnit(it.unidade || ing.unidade);
+      const unitPrice = Number(ing.preco_unitario || 0);
+      const cost = needed * unitPrice;
+      return {id: ing._id || it.ingrediente_id, nome: it.nome, needed, unidade: unit, unitPrice, cost};
+    });
+    const totalCost = details.reduce((s,d)=>s+d.cost,0);
+    const lucro = priceSell - totalCost;
+
+    if(els.saleResult){
+      els.saleResult.innerHTML = `
+        <h3>Venda registrada</h3>
+        <div class="small muted">
+          <strong>Cliente:</strong> ${customer || '—'} ·
+          <strong>Entrega:</strong> ${formatDelivery(deliveryDate)} ·
+          <strong>Receita:</strong> ${recipe.nome} (${formatQuantityDisplay(quantity, priceInfo.type)}) · Valor configurado: ${toBRL(priceInfo.base)} / ${priceInfo.type === 'un' ? 'un' : 'kg'}
+        </div>
+        <table><thead><tr><th>Insumo</th><th>Quantidade (g/ml/un)</th><th>Custo</th></tr></thead><tbody>
+        ${details.map(d=>`<tr><td>${d.nome}</td><td>${formatMeasure(d.needed, d.unidade)}</td><td>${toBRL(d.cost)}</td></tr>`).join('')}
+        </tbody></table>
+        <div class="small" style="display:flex;flex-wrap:wrap;gap:16px;margin-top:12px">
+          <span><strong>Custo total:</strong> ${toBRL(totalCost)}</span>
+          <span><strong>Preço de venda:</strong> ${toBRL(priceSell)}</span>
+          <span><strong>Lucro estimado:</strong> ${toBRL(lucro)}</span>
+        </div>
+      `;
+    }
+
+    for (const d of details) {
+      const ing = INGREDIENTS.find(x=>x._id === d.id);
+      if(!ing) continue;
+      const newQty = Math.max(0, Number(ing.quantidade_total || 0) - Number(d.needed || 0));
+      const unitPrice = Number(ing.preco_unitario || 0);
+      const newTotalValue = newQty * unitPrice;
+      await setItem('ingredients', ing._id, {quantidade_total: newQty, preco_total: newTotalValue, preco_unitario: unitPrice, unidade: ing.unidade});
+    }
+
+    await addItem('orders',{
+      recipe_id:recipe._id,
+      recipe_name:recipe.nome,
+      customer,
+      deliveryDate,
+      kg: quantity,
+      priceSell,
+      totalCost,
+      lucro,
+      priceType: priceInfo.type,
+      status:'pending',
+      createdAt:Date.now()
+    });
+
+    await refreshAll();
+    els.saleForm.reset();
+    if(els.saleKg) els.saleKg.value = 1;
+  });
+}
+
+const btnClearSale = document.getElementById('btn-clear-sale');
+if(btnClearSale){
+  btnClearSale.addEventListener('click', ()=>{
+    if(!els.saleForm) return;
+    els.saleForm.reset();
+    if(els.saleKg) els.saleKg.value = 1;
+    if(els.saleResult) els.saleResult.textContent = 'Venda limpa. Preencha novamente para ver o resumo.';
+  });
+}
+
+const btnClearOrder = document.getElementById('btn-clear-order');
+if(btnClearOrder){
+  btnClearOrder.addEventListener('click', ()=>{
+    if(els.formOrder) els.formOrder.reset();
+    if(els.orderKg) els.orderKg.value = 1;
+    if(els.orderResult) els.orderResult.textContent = 'Preencha os campos e clique em calcular para ver o resumo.';
+    LAST_QUOTE_MESSAGE = '';
+  });
+}
+
+els.btnLogout.addEventListener('click', async () => {
+  await signOut(auth);
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      const userData = userDoc.data();
+      if (userData.categoria !== 'profissional') {
+        window.location.replace('index.html');
+        return;
+      }
+      CURRENT_USER = { uid: user.uid, ...userData };
+      document.body.style.display = 'block';
+      els.userInfo.textContent = `Logado como: ${CURRENT_USER.email}`;
+      initializeAppForUser();
+    } else {
+      // Perfil não existe, redireciona para o roteador que irá criar um perfil padrão
+      window.location.replace('index.html');
+    }
+  } else {
+    window.location.replace('login.html');
+  }
+});
+
+</script>
+</body>
+</html>
