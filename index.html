@@ -1743,10 +1743,24 @@ onAuthStateChanged(auth, async (user) => {
       initializeAppForUser();
 
     } else {
-      // Caso de segurança: o usuário existe no Auth mas não no Firestore.
-      console.error("Documento do usuário não encontrado no Firestore! Fazendo logout forçado.");
-      await signOut(auth);
-      // onAuthStateChanged será chamado novamente com user=null e fará o redirecionamento.
+      // O usuário existe no Auth, mas não no Firestore. Isso acontece se foi criado manualmente.
+      // Vamos criar o documento de perfil para ele agora.
+      console.warn(`Documento do usuário ${user.uid} não encontrado. Criando perfil padrão.`);
+      
+      const newUserProfile = {
+        email: user.email,
+        categoria: 'cliente', // Categoria padrão de segurança. Mude para 'adm' manualmente no Firestore.
+        nome: user.email.split('@')[0], // Usa a parte local do email como nome padrão
+        createdAt: new Date().toISOString()
+      };
+
+      await setDoc(userDocRef, newUserProfile);
+
+      // Agora que o perfil foi criado, podemos continuar como se ele sempre existisse.
+      CURRENT_USER = { uid: user.uid, ...newUserProfile };
+      console.log("Perfil padrão criado para o usuário:", CURRENT_USER);
+      // Recarrega a página para garantir que todas as lógicas (como a de admin) sejam aplicadas corretamente.
+      window.location.reload();
     }
   } else {
     // Usuário não está logado, redireciona para a página de login.
