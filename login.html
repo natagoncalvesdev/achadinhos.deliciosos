@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Login — Achadinhos Deliciosos</title>
+  <style>
+    :root{
+      font-family:"Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      --bg:#f4f6fb;
+      --card:#ffffff;
+      --text:#0f172a;
+      --muted:#6b7280;
+      --border:#e2e8f0;
+      color:var(--text);
+    }
+    *{box-sizing:border-box}
+    body{margin:0; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px;}
+    .card{background:var(--card); border-radius:16px; padding:28px; box-shadow:0 20px 45px rgba(15,23,42,0.08); border:1px solid rgba(15,23,42,0.05); width:100%; max-width:400px;}
+    h3{margin:0 0 8px; font-size:1.5rem;}
+    p{margin:0 0 24px; color:var(--muted);}
+    label{display:block; margin:14px 0 6px; font-size:0.9rem; color:var(--muted);}
+    input{width:100%; padding:11px 12px; border-radius:10px; border:1px solid var(--border); font-size:0.95rem; font-family:inherit;}
+    input:focus{outline:2px solid #2563eb33; border-color:#2563eb66;}
+    .actions{display:flex; gap:10px; margin-top:18px;}
+    .btn{cursor:pointer; background:linear-gradient(135deg,#ff9a8b,#ff6a88 45%,#ff99ac); color:#fff; border:none; font-weight:600; text-align:center; border-radius:999px; box-shadow:0 12px 25px rgba(255,106,136,0.35); width:100%; padding:11px 12px; font-size:0.95rem;}
+    .switch-page{text-align:center; margin-top:16px; font-size:0.9rem;}
+    .switch-page a{color:var(--text); text-decoration:underline;}
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h3>Login</h3>
+    <p>Acesse sua conta para continuar.</p>
+    <form id="form-login">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" required placeholder="seu@email.com">
+      <label for="login-password">Senha</label>
+      <input id="login-password" type="password" required placeholder="••••••••">
+      <div class="actions">
+        <button class="btn" type="submit">Entrar</button>
+      </div>
+    </form>
+    <p class="switch-page">Não tem uma conta? <a href="cadastro.html">Cadastre-se</a></p>
+  </div>
+
+<script type="module">
+  const firebaseConfig = {
+    apiKey: "AIzaSyDg83oO_NjNU_Tz9AKTfmsxYJY7vSkijyM",
+    authDomain: "achadinhos-deliciosos.firebaseapp.com",
+    projectId: "achadinhos-deliciosos",
+    storageBucket: "achadinhos-deliciosos.appspot.com",
+    messagingSenderId: "782203131056",
+    appId: "1:782203131056:web:2c832412f81157cac1d775"
+  };
+
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+
+  // Se o usuário já estiver logado, redireciona para a aplicação principal
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      window.location.href = 'index.html';
+    }
+  });
+
+  const formLogin = document.getElementById('form-login');
+  formLogin.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = e.target['login-email'].value;
+    const password = e.target['login-password'].value;
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      // O listener onAuthStateChanged vai detectar o login e redirecionar
+    } catch (error) {
+      console.error("Erro no login:", error);
+      alert(`Erro no login: ${error.message}`);
+    }
+  });
+</script>
+
+</body>
+</html>

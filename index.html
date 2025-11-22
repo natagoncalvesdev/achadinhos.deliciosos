@@ -341,6 +341,7 @@
       .sidebar footer{width:100%;}
       main{padding:24px;}
     }
+    .user-info { margin-left: auto; font-size: 0.9rem; opacity: 0.9; }
   </style>
   <style>
     @media(max-width:960px){
@@ -353,7 +354,7 @@
     }
   </style>
 </head>
-<body>
+<body style="display: none;">
   <div class="app">
     <div class="sidebar-container">
       <aside class="sidebar">
@@ -386,7 +387,9 @@
           <option value="relatorios">📈 Relatórios</option>
         </select>
       </div>
-      
+      <footer>
+        <button id="btn-logout" class="btn ghost" style="width:100%">Sair</button>
+      </footer>
     </aside>
     </div>
     <main>
@@ -394,6 +397,7 @@
         <div>
           <span class="eyebrow">Achadinhos · Backoffice</span>
           <h2 style="margin:0" id="page-title">Bem-vindo(a)!</h2>
+          <div id="user-info" class="user-info"></div>
         </div>
       </header>
 
@@ -430,6 +434,12 @@
             <p>Analise o desempenho do seu negócio.</p>
           </a>
         </div>
+      </section>
+
+      <section id="cliente-home" class="section page" data-page="cliente-home">
+        <h3>Bem-vindo(a), Cliente!</h3>
+        <p class="muted">Esta é a sua área de cliente. Em breve, você terá acesso a novas funcionalidades para acompanhar seus pedidos e muito mais.</p>
+        <p>Enquanto isso, sinta-se à vontade para explorar. 🍰</p>
       </section>
 
       <section id="compras" class="section page" data-page="compras">
@@ -664,15 +674,11 @@
 
 <!-- ====== SCRIPT (usa Firebase modular via CDN) ====== -->
 <script type="module">
-// ====== CONFIGURE AQUI ======
-// Cole sua firebaseConfig (objeto) abaixo, por exemplo:
-// const firebaseConfig = { apiKey: "...", authDomain: "...", projectId: "...", ... };
-
 const firebaseConfig = {
   apiKey: "AIzaSyDg83oO_NjNU_Tz9AKTfmsxYJY7vSkijyM",
   authDomain: "achadinhos-deliciosos.firebaseapp.com",
   projectId: "achadinhos-deliciosos",
-  storageBucket: "achadinhos-deliciosos.firebasestorage.app",
+  storageBucket: "achadinhos-deliciosos.appspot.com",
   messagingSenderId: "782203131056",
   appId: "1:782203131056:web:2c832412f81157cac1d775"
 }
@@ -682,11 +688,14 @@ if (!firebaseConfig) {
 }
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot, updateDoc, query } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot, updateDoc, query, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 let db = null;
+let auth = null;
 if (firebaseConfig) {
   const app = initializeApp(firebaseConfig);
+  auth = getAuth(app);
   db = getFirestore(app);
 }
 
@@ -739,6 +748,7 @@ async function listItems(collectionName) {
 }
 
 // ---------- App State & UI ----------
+let CURRENT_USER = null;
 const els = {
   pageTitle: document.getElementById('page-title'),
   formIngredient: document.getElementById('form-ingredient'),
@@ -789,7 +799,9 @@ const els = {
   reportCost: document.getElementById('report-cost'),
   reportProfit: document.getElementById('report-profit'),
   reportTableProducts: document.querySelector('#report-table-products tbody'),
-  reportTableIngredients: document.querySelector('#report-table-ingredients tbody')
+  reportTableIngredients: document.querySelector('#report-table-ingredients tbody'),
+  btnLogout: document.getElementById('btn-logout'),
+  userInfo: document.getElementById('user-info')
 };
 
 const DEFAULT_PAGE = 'home';
@@ -802,6 +814,17 @@ const calendarState = {
 function activatePage(pageId = DEFAULT_PAGE){
   const exists = els.pages.some(page => page.dataset.page === pageId);
   const targetPage = exists ? pageId : DEFAULT_PAGE;
+
+  // Lógica de Controle de Acesso (Role-Based Access Control)
+  if (CURRENT_USER && CURRENT_USER.categoria === 'cliente') {
+    // Força o cliente para a sua página específica e esconde o resto.
+    els.pages.forEach(page => page.classList.toggle('active', page.id === 'cliente-home'));
+    els.navLinks.forEach(link => link.classList.remove('active'));
+    els.pageTitle.textContent = 'Área do Cliente';
+    if (window.location.hash !== '#cliente-home') history.replaceState(null, '', '#cliente-home');
+    return;
+  }
+
   els.pages.forEach(page => page.classList.toggle('active', page.dataset.page === targetPage));
   els.navLinks.forEach(link => link.classList.toggle('active', link.dataset.target === targetPage));
   if(els.mobileNavSelect.value !== targetPage){
@@ -836,7 +859,10 @@ window.addEventListener('hashchange', () => {
   activatePage(page);
 });
 
-activatePage((window.location.hash || '').replace('#','') || DEFAULT_PAGE);
+function initializeAppForUser() {
+  activatePage((window.location.hash || '').replace('#','') || DEFAULT_PAGE);
+  refreshAll();
+}
 
 // in-memory caches
 let INGREDIENTS = [];
@@ -845,6 +871,11 @@ let PURCHASES = [];
 let ORDERS = [];
 
 async function refreshAll() {
+  if (!CURRENT_USER) {
+    console.log("Nenhum usuário logado, não é possível carregar os dados.");
+    return;
+  }
+
   INGREDIENTS = await listItems('ingredients');
   RECIPES = await listItems('recipes');
   PURCHASES = await listItems('purchases');
@@ -1541,7 +1572,65 @@ if(btnClearOrder){
   });
 }
 
-await refreshAll();
+els.btnLogout.addEventListener('click', async () => {
+  await signOut(auth);
+  // O onAuthStateChanged vai cuidar do redirecionamento para a página de login.
+});
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    // Usuário está logado, buscar seu perfil no Firestore.
+    const userDocRef = doc(db, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (userDoc.exists()) {
+      CURRENT_USER = { uid: user.uid, ...userDoc.data() };
+      console.log("Usuário autenticado:", CURRENT_USER);
+
+      // Exibe o corpo da página agora que sabemos quem é o usuário.
+      document.body.style.display = 'block';
+
+      // Atualiza a UI com base na categoria do usuário
+      els.userInfo.textContent = `Logado como: ${CURRENT_USER.email} (${CURRENT_USER.categoria})`;
+      
+      const isClient = CURRENT_USER.categoria === 'cliente';
+      const isProfessional = CURRENT_USER.categoria === 'profissional';
+      const isAdmin = CURRENT_USER.categoria === 'adm';
+
+      // Clientes não veem os links de navegação
+      if (isClient) {
+        els.navLinks.forEach(link => link.style.display = 'none');
+        els.mobileNavSelect.style.display = 'none';
+        if (els.mobileNavSelect.previousElementSibling) {
+          els.mobileNavSelect.previousElementSibling.style.display = 'none';
+        }
+      } else {
+        // Profissionais e Admins veem tudo (por enquanto)
+        els.navLinks.forEach(link => link.style.display = 'flex');
+        els.mobileNavSelect.style.display = 'block';
+        if (els.mobileNavSelect.previousElementSibling) {
+          els.mobileNavSelect.previousElementSibling.style.display = 'block';
+        }
+      }
+
+      // Inicia a aplicação para o usuário logado
+      initializeAppForUser();
+
+    } else {
+      // Caso de segurança: o usuário existe no Auth mas não no Firestore.
+      console.error("Documento do usuário não encontrado no Firestore! Fazendo logout forçado.");
+      await signOut(auth);
+      // onAuthStateChanged será chamado novamente com user=null e fará o redirecionamento.
+    }
+  } else {
+    // Usuário não está logado, redireciona para a página de login.
+    CURRENT_USER = null;
+    console.log("Nenhum usuário autenticado. Redirecionando para o login...");
+    // Se o arquivo de login estiver em outra pasta, ajuste o caminho.
+    // Ex: window.location.href = '/auth/login.html';
+    window.location.href = 'login.html';
+  }
+});
 
 </script>
 </body>
