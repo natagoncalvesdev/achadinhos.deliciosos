@@ -67,13 +67,6 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
-  // Se o usuário já estiver logado, redireciona para a aplicação principal
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      window.location.href = 'index.html';
-    }
-  });
-
   const formRegister = document.getElementById('form-register');
   formRegister.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -95,7 +88,8 @@
         createdAt: new Date().toISOString()
       });
 
-      // O listener onAuthStateChanged vai detectar o login e redirecionar
+      // Redireciona APENAS DEPOIS de salvar o perfil no Firestore
+      window.location.href = 'index.html';
     } catch (error) {
       console.error("Erro no cadastro:", error);
       alert(`Erro no cadastro: ${error.message}`);
