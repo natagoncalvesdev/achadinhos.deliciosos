@@ -245,9 +245,6 @@
           <option value="profissionais">‍🍳 Profissionais</option>
         </select>
       </div>
-      <footer>
-        <button id="btn-logout" class="btn ghost" style="width:100%">Sair</button>
-      </footer>
     </aside>
     </div>
     <main>
@@ -255,7 +252,6 @@
         <div>
           <span class="eyebrow">Achadinhos · Admin</span>
           <h2 style="margin:0" id="page-title">Gerenciamento de Usuários</h2>
-          <div id="user-info" class="user-info"></div>
         </div>
       </header>
 
@@ -286,6 +282,9 @@
           </table>
         </div>
       </section>
+      <footer>
+        <button id="btn-logout" class="btn ghost" style="width:100%">Sair da conta</button>
+      </footer>
     </main>
   </div>
 
@@ -317,7 +316,7 @@ const els = {
   pages: Array.from(document.querySelectorAll('[data-page]')),
   mobileNavSelect: document.getElementById('mobile-nav-select'),
   btnLogout: document.getElementById('btn-logout'),
-  userInfo: document.getElementById('user-info'),
+  brandSpan: document.querySelector('.brand span'),
   tableUsers: document.querySelector('#table-users tbody'),
   professionalsList: document.getElementById('professionals-list'),
 };
@@ -428,7 +427,7 @@ onAuthStateChanged(auth, async (user) => {
       }
       CURRENT_USER = { uid: user.uid, ...userData };
       document.body.style.display = 'block';
-      els.userInfo.textContent = `Bem vindo, ${(CURRENT_USER.nome || '').split(' ')[0]}!`;
+      els.brandSpan.textContent = `Bem vindo, ${(CURRENT_USER.nome || '').split(' ')[0]}!`;
       
       ALL_USERS = await listGlobalItems('users');
       renderUsers();

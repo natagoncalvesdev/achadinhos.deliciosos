@@ -387,9 +387,6 @@
           <option value="relatorios">📈 Relatórios</option>
         </select>
       </div>
-      <footer>
-        <button id="btn-logout" class="btn ghost" style="width:100%">Sair</button>
-      </footer>
     </aside>
     </div>
     <main>
@@ -397,7 +394,6 @@
         <div>
           <span class="eyebrow">Achadinhos · Backoffice</span>
           <h2 style="margin:0" id="page-title">Bem-vindo(a)!</h2>
-          <div id="user-info" class="user-info"></div>
         </div>
       </header>
 
@@ -433,6 +429,9 @@
             <h4>📈 Relatórios</h4>
             <p>Analise o desempenho do seu negócio.</p>
           </a>
+        </div>
+        <div class="actions" style="justify-content: center;">
+            <button id="btn-logout" class="btn ghost">Sair da conta</button>
         </div>
       </section>
 
@@ -831,8 +830,8 @@ const els = {
   reportTableProducts: document.querySelector('#report-table-products tbody'),
   reportTableIngredients: document.querySelector('#report-table-ingredients tbody'),
   btnLogout: document.getElementById('btn-logout'),
-  pageHeader: document.querySelector('.page-header'),
-  userInfo: document.getElementById('user-info'),
+  brandSpan: document.querySelector('.brand span'),
+  pageHeader: document.querySelector('.page-header')
 };
 
 const DEFAULT_PAGE = 'home';
@@ -1640,7 +1639,7 @@ onAuthStateChanged(auth, async (user) => {
       }
       CURRENT_USER = { uid: user.uid, ...userData };
       document.body.style.display = 'block';
-      els.userInfo.textContent = `Bem vindo, ${(CURRENT_USER.nome || '').split(' ')[0]}!`;
+      els.brandSpan.textContent = `Bem vindo, ${(CURRENT_USER.nome || '').split(' ')[0]}!`;
       initializeAppForUser();
     } else {
       window.location.replace('index.html');
