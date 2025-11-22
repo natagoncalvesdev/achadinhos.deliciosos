@@ -156,6 +156,18 @@
       font-size: 0.9rem;
       color: var(--muted);
     }
+    .product-card {
+      text-decoration: none;
+      color: var(--text);
+    }
+    .product-card h4 {
+      margin: 0 0 8px;
+    }
+    .home-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
     .card{
       background:var(--card);
       border-radius:16px;
@@ -445,9 +457,10 @@
       </section>
 
       <section id="cliente-home" class="section page" data-page="cliente-home">
-        <h3>Bem-vindo(a), Cliente!</h3>
-        <p class="muted">Esta é a sua área de cliente. Em breve, você terá acesso a novas funcionalidades para acompanhar seus pedidos e muito mais.</p>
-        <p>Enquanto isso, sinta-se à vontade para explorar. 🍰</p>
+        <h3 id="cliente-welcome"></h3>
+        <p class="muted">Abaixo estão os produtos disponíveis para encomenda. Em breve, mais funcionalidades!</p>
+        <div id="public-products-list" class="cards-grid two">
+        </div>
       </section>
 
       <section id="compras" class="section page" data-page="compras">
@@ -527,6 +540,11 @@
                 <option value="kg">Por quilo (kg)</option>
                 <option value="un">Por unidade (un)</option>
               </select>
+              <label for="recipe-public">Disponível na loja para clientes?</label>
+              <select id="recipe-public">
+                <option value="false" selected>Não, apenas para uso interno</option>
+                <option value="true">Sim, mostrar na loja</option>
+              </select>
               <label>Ingredientes desta receita</label>
               <div id="recipe-ingredients" class="muted">— ainda sem ingredientes —</div>
               <div class="row-inline">
@@ -544,7 +562,7 @@
           </article>
           <article class="card">
             <h4 style="margin:0 0 8px">Receitas cadastradas</h4>
-            <table id="table-recipes"><thead><tr><th>Nome</th><th>Porção (kg)</th><th>Valor base</th><th></th></tr></thead><tbody></tbody></table>
+            <table id="table-recipes"><thead><tr><th>Nome</th><th>Status</th><th>Valor base</th><th></th></tr></thead><tbody></tbody></table>
           </article>
         </div>
       </section>
@@ -868,6 +886,7 @@ const els = {
   navMobileProfissionais: document.getElementById('nav-mobile-profissionais'),
   tableUsers: document.querySelector('#table-users tbody'),
   professionalsList: document.getElementById('professionals-list'),
+  publicProductsList: document.getElementById('public-products-list'),
   impersonationBanner: document.getElementById('impersonation-banner'),
 };
 
@@ -884,7 +903,7 @@ function activatePage(pageId = DEFAULT_PAGE){
 
   // Lógica de Controle de Acesso (Role-Based Access Control)
   if (CURRENT_USER && CURRENT_USER.categoria === 'cliente') {
-    // Força o cliente para a sua página específica e esconde o resto.
+    // Força o cliente para a sua página específica e esconde o resto
     els.pages.forEach(page => page.classList.toggle('active', page.id === 'cliente-home'));
     els.navLinks.forEach(link => link.classList.remove('active'));
     els.pageTitle.textContent = 'Área do Cliente';
@@ -950,6 +969,11 @@ async function refreshAll() {
     renderUsers();
     renderProfessionals();
   }
+
+  if (CURRENT_USER.categoria === 'cliente') {
+    renderPublicRecipes();
+  }
+
   INGREDIENTS = await listItems('ingredients');
   RECIPES = await listItems('recipes');
   PURCHASES = await listItems('purchases');
@@ -960,6 +984,32 @@ async function refreshAll() {
   renderPurchases();
   renderSales();
   populateReportFilter();
+}
+
+async function renderPublicRecipes() {
+  // Esta função é para o cliente. Ela busca as receitas públicas do profissional.
+  // Assumindo que o cliente está vinculado a um profissional (aqui, pegamos o primeiro que encontrar)
+  // Em um sistema real, o cliente teria um campo 'professional_id'
+  const professionals = await listGlobalItems('users');
+  const professional = professionals.find(u => u.categoria === 'profissional');
+
+  if (!professional) {
+    els.publicProductsList.innerHTML = '<p class="muted">Nenhum profissional configurado no sistema ainda.</p>';
+    return;
+  }
+
+  const publicRecipesPath = `users/${professional._id}/recipes`;
+  const q = query(collection(db, publicRecipesPath), where("publica", "==", true));
+  const snapshot = await getDocs(q);
+  
+  els.publicProductsList.innerHTML = '';
+  snapshot.forEach(doc => {
+    const recipe = doc.data();
+    const card = document.createElement('div');
+    card.className = 'card product-card';
+    card.innerHTML = `<h4>${recipe.nome}</h4><p>${toBRL(recipe.preco_base)} / ${recipe.preco_tipo}</p>`;
+    els.publicProductsList.appendChild(card);
+  });
 }
 
 function toBRL(v){ return Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
@@ -1079,8 +1129,11 @@ function renderRecipes(){
   RECIPES.forEach(r=>{
     const tr = document.createElement('tr');
     const priceInfo = getRecipePriceInfo(r);
+    const status = r.publica ? '<span style="color: #16a34a;">Na loja</span>' : '<span style="color: var(--muted);">Interno</span>';
     const priceLabel = `${toBRL(priceInfo.base)} / ${priceInfo.type === 'kg' ? 'kg' : 'un'}`;
-    tr.innerHTML = `<td>${r.nome}</td><td>${r.porcao_padrao_kg}</td><td>${priceLabel}</td><td><button class="btn ghost" type="button" data-id="${r._id}">Editar</button></td>`;
+    tr.innerHTML = `<td>${r.nome}</td>
+                    <td>${status}</td>
+                    <td>${priceLabel}</td><td><button class="btn ghost" type="button" data-id="${r._id}">Editar</button></td>`;
     els.tableRecipes.appendChild(tr);
     const opt = document.createElement('option'); opt.value = r._id; opt.textContent = r.nome;
     if(els.orderRecipe) els.orderRecipe.appendChild(opt.cloneNode(true));
@@ -1444,6 +1497,7 @@ els.formRecipe.addEventListener('submit', async (e)=>{
   const nome = els.recipeName.value.trim(); const porcao = Number(els.recipePortion.value) || 1;
   const precoBase = Number(els.recipePrice.value) || 0;
   const precoTipo = els.recipePriceType.value || 'kg';
+  const isPublic = document.getElementById('recipe-public').value === 'true';
   const ingredientesNormalizados = (TEMP_RECIPE.ingredientes || []).map(item=>{
     const fallbackIng = INGREDIENTS.find(x=>x._id === item.ingrediente_id);
     return {
@@ -1451,7 +1505,7 @@ els.formRecipe.addEventListener('submit', async (e)=>{
       unidade: normalizeUnit(item.unidade || (fallbackIng && fallbackIng.unidade))
     };
   });
-  const payload = {nome, porcao_padrao_kg:porcao, preco_base:precoBase, preco_tipo:precoTipo, ingredientes: ingredientesNormalizados};
+  const payload = {nome, porcao_padrao_kg:porcao, preco_base:precoBase, preco_tipo:precoTipo, publica: isPublic, ingredientes: ingredientesNormalizados};
   if (EDITING_RECIPE){
     await setItem('recipes', EDITING_RECIPE._id, payload);
     EDITING_RECIPE = null;
@@ -1476,6 +1530,7 @@ els.tableRecipes.addEventListener('click', (ev)=>{
   els.recipeName.value = r.nome; els.recipePortion.value = r.porcao_padrao_kg;
   if(els.recipePrice) els.recipePrice.value = r.preco_base || 0;
   if(els.recipePriceType) els.recipePriceType.value = r.preco_tipo || 'kg';
+  document.getElementById('recipe-public').value = r.publica ? 'true' : 'false';
   renderRecipeIngredientsUI(TEMP_RECIPE);
 });
 
@@ -1708,6 +1763,10 @@ onAuthStateChanged(auth, async (user) => {
       // Atualiza a UI com base na categoria do usuário
       els.userInfo.textContent = `Logado como: ${CURRENT_USER.email} (${CURRENT_USER.categoria})`;
       
+      if (CURRENT_USER.categoria === 'cliente') {
+        const firstName = (CURRENT_USER.nome || '').split(' ')[0];
+        document.getElementById('cliente-welcome').textContent = `Bem-vindo(a), ${firstName}!`;
+      }
       const isClient = CURRENT_USER.categoria === 'cliente';
       const isProfessional = CURRENT_USER.categoria === 'profissional';
       const isAdmin = CURRENT_USER.categoria === 'adm';
