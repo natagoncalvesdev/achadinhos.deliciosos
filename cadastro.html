@@ -34,10 +34,14 @@
     <h3>Crie sua conta</h3>
     <p>Por padrão, você será um cliente.</p>
     <form id="form-register">
+      <label for="register-name">Nome completo</label>
+      <input id="register-name" type="text" required placeholder="Seu nome completo">
       <label for="register-email">Email</label>
       <input id="register-email" type="email" required placeholder="seu@email.com">
+      <label for="register-phone">Celular (com DDD)</label>
+      <input id="register-phone" type="tel" required placeholder="(11) 99999-8888">
       <label for="register-password">Senha (mínimo 6 caracteres)</label>
-      <input id="register-password" type="password" required placeholder="••••••••">
+      <input id="register-password" type="password" minlength="6" required placeholder="••••••••">
       <div class="actions">
         <button class="btn" type="submit">Criar conta</button>
       </div>
@@ -73,15 +77,19 @@
   const formRegister = document.getElementById('form-register');
   formRegister.addEventListener('submit', async (e) => {
     e.preventDefault();
+    const name = e.target['register-name'].value;
     const email = e.target['register-email'].value;
+    const phone = e.target['register-phone'].value;
     const password = e.target['register-password'].value;
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Salva a categoria 'cliente' no Firestore
+      // Salva os dados do usuário no Firestore
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, {
+        nome: name,
+        celular: phone,
         email: user.email,
         categoria: 'cliente', // Categoria padrão
         createdAt: new Date().toISOString()
