@@ -32,8 +32,7 @@
   <main>
     <header>
       <div>
-        <h1 id="cliente-welcome"></h1>
-        <p class="user-info" id="user-info"></p>
+        <h1 id="cliente-welcome">Carregando...</h1>
       </div>
       <button id="btn-logout" class="btn ghost">Sair</button>
     </header>
@@ -110,8 +109,7 @@
           return;
         }
         const firstName = (userData.nome || '').split(' ')[0];
-        document.getElementById('cliente-welcome').textContent = `Bem-vindo(a), ${firstName}!`;
-        document.getElementById('user-info').textContent = `Logado como: ${userData.email}`;
+        document.getElementById('cliente-welcome').textContent = `Bem vindo, ${firstName}!`;
         renderPublicRecipes();
       }
     } else {

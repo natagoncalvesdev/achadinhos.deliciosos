@@ -720,6 +720,14 @@ function getCollectionPath(collectionName) {
   return `users/${CURRENT_USER.uid}/${collectionName}`;
 }
 
+function getImpersonatedCollectionPath(impersonatedId, collectionName) {
+  if (useLocalFallback || !impersonatedId) {
+    return collectionName;
+  }
+  // Busca os dados do profissional que está sendo personificado
+  return `users/${impersonatedId}/${collectionName}`;
+}
+
 async function addItem(collectionName, data) {
   const path = getCollectionPath(collectionName);
   if (useLocalFallback) {
@@ -751,6 +759,17 @@ async function setItem(collectionName, id, data) {
 
 async function listItems(collectionName) {
   const path = getCollectionPath(collectionName);
+  const impersonatedId = new URLSearchParams(window.location.search).get('impersonate');
+
+  if (impersonatedId) {
+    // Se estiver personificando, usa o caminho do profissional-alvo
+    const impersonatedPath = getImpersonatedCollectionPath(impersonatedId, collectionName);
+    const snapshot = await getDocs(collection(db, impersonatedPath));
+    const arr = [];
+    snapshot.forEach(d => arr.push({...d.data(), _id: d.id}));
+    return arr;
+  }
+
   if (useLocalFallback) return loadLocal(path);
   const snapshot = await getDocs(collection(db, path));
   const arr = [];
@@ -812,6 +831,7 @@ const els = {
   reportTableProducts: document.querySelector('#report-table-products tbody'),
   reportTableIngredients: document.querySelector('#report-table-ingredients tbody'),
   btnLogout: document.getElementById('btn-logout'),
+  pageHeader: document.querySelector('.page-header'),
   userInfo: document.getElementById('user-info'),
 };
 
@@ -1584,21 +1604,45 @@ els.btnLogout.addEventListener('click', async () => {
 
 onAuthStateChanged(auth, async (user) => {
   if (user) {
+    const impersonatedId = new URLSearchParams(window.location.search).get('impersonate');
     const userDocRef = doc(db, "users", user.uid);
     const userDoc = await getDoc(userDocRef);
 
     if (userDoc.exists()) {
       const userData = userDoc.data();
-      if (userData.categoria !== 'profissional') {
+
+      // Lógica de Personificação
+      if (impersonatedId && userData.categoria === 'adm') {
+        const professionalDocRef = doc(db, "users", impersonatedId);
+        const professionalDoc = await getDoc(professionalDocRef);
+        if (professionalDoc.exists()) {
+          // Define o usuário atual como o profissional personificado
+          CURRENT_USER = { uid: professionalDoc.id, ...professionalDoc.data() };
+          document.body.style.display = 'block';
+          
+          // Adiciona um banner de aviso
+          const banner = document.createElement('div');
+          banner.style = "background: #fffbe6; border: 1px solid #fde047; padding: 12px; border-radius: 12px; text-align: center; margin-top: 16px; width: 100%;";
+          banner.innerHTML = `<p style="margin: 0; font-weight: 500;">Visualizando como <strong>${CURRENT_USER.nome}</strong> (Admin: ${userData.email})</p>`;
+          els.pageHeader.appendChild(banner);
+
+          // Redireciona para a página de relatórios
+          window.location.hash = '#relatorios';
+          initializeAppForUser();
+          return;
+        }
+      }
+
+      // Fluxo normal para profissional
+      if (userData.categoria !== 'profissional' && !impersonatedId) {
         window.location.replace('index.html');
         return;
       }
       CURRENT_USER = { uid: user.uid, ...userData };
       document.body.style.display = 'block';
-      els.userInfo.textContent = `Logado como: ${CURRENT_USER.email}`;
+      els.userInfo.textContent = `Bem vindo, ${(CURRENT_USER.nome || '').split(' ')[0]}!`;
       initializeAppForUser();
     } else {
-      // Perfil não existe, redireciona para o roteador que irá criar um perfil padrão
       window.location.replace('index.html');
     }
   } else {

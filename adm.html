@@ -414,7 +414,6 @@ els.professionalsList.addEventListener('click', (e) => {
   const professionalId = card.dataset.impersonateId;
   // A personificação agora redireciona para a página do profissional com um parâmetro
   window.open(`profissional.html?impersonate=${professionalId}`, '_blank');
-  alert(`Abrindo a visão do profissional em uma nova aba. Você continuará como admin nesta aba.`);
 });
 
 onAuthStateChanged(auth, async (user) => {
@@ -429,7 +428,7 @@ onAuthStateChanged(auth, async (user) => {
       }
       CURRENT_USER = { uid: user.uid, ...userData };
       document.body.style.display = 'block';
-      els.userInfo.textContent = `Logado como: ${CURRENT_USER.email}`;
+      els.userInfo.textContent = `Bem vindo, ${(CURRENT_USER.nome || '').split(' ')[0]}!`;
       
       ALL_USERS = await listGlobalItems('users');
       renderUsers();
