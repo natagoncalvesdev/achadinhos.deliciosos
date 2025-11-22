@@ -1750,6 +1750,12 @@ onAuthStateChanged(auth, async (user) => {
       // Exibe o corpo da página agora que sabemos quem é o usuário.
       document.body.style.display = 'block';
 
+      // Se o usuário for admin, carrega a lista de todos os usuários PRIMEIRO.
+      // Isso é crucial para as abas de gerenciamento e personificação.
+      if (CURRENT_USER.categoria === 'adm') {
+        ALL_USERS = await listGlobalItems('users');
+      }
+
       // Verifica se está em modo de personificação
       const impersonatedId = sessionStorage.getItem('impersonated_user_id');
       if (impersonatedId && CURRENT_USER.categoria === 'adm') {
