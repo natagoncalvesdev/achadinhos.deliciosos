@@ -372,6 +372,8 @@
           <li><a href="#registrar" data-target="registrar">🧾 Registrar venda</a></li>
           <li><a href="#vendas" data-target="vendas">💼 Vendas</a></li>
           <li><a href="#relatorios" data-target="relatorios">📈 Relatórios</a></li>
+          <li><a href="#usuarios" data-target="usuarios" id="nav-usuarios" style="display: none;">👤 Usuários</a></li>
+          <li><a href="#profissionais" data-target="profissionais" id="nav-profissionais" style="display: none;">‍🍳 Profissionais</a></li>
         </ul>
       </nav>
       <div class="mobile-nav">
@@ -385,6 +387,8 @@
           <option value="registrar">🧾 Registrar venda</option>
           <option value="vendas">💼 Vendas</option>
           <option value="relatorios">📈 Relatórios</option>
+          <option value="usuarios" id="nav-mobile-usuarios" style="display: none;">👤 Usuários</option>
+          <option value="profissionais" id="nav-mobile-profissionais" style="display: none;">‍🍳 Profissionais</option>
         </select>
       </div>
       <footer>
@@ -398,6 +402,10 @@
           <span class="eyebrow">Achadinhos · Backoffice</span>
           <h2 style="margin:0" id="page-title">Bem-vindo(a)!</h2>
           <div id="user-info" class="user-info"></div>
+        </div>
+        <div id="impersonation-banner" style="display: none; width: 100%; background: #fffbe6; border: 1px solid #fde047; padding: 12px; border-radius: 12px; text-align: center; margin-top: 16px;">
+          <p style="margin: 0; font-weight: 500;">Você está visualizando os dados de <strong id="impersonation-name"></strong>.</p>
+          <button id="exit-impersonation" class="btn ghost" style="padding: 4px 12px; font-size: 0.85rem; margin-top: 8px;">Sair da visualização</button>
         </div>
       </header>
 
@@ -669,6 +677,34 @@
           </article>
         </div>
       </section>
+
+      <section id="profissionais" class="section page" data-page="profissionais">
+        <h3>Visualizar Dados de Profissionais</h3>
+        <p class="muted">Selecione um profissional para visualizar seus relatórios e dados como se fosse ele.</p>
+        <div class="card">
+          <div id="professionals-list" class="cards-grid two">
+            <!-- Cards de profissionais serão renderizados aqui -->
+          </div>
+        </div>
+      </section>
+
+      <section id="usuarios" class="section page" data-page="usuarios">
+        <h3>Gerenciamento de Usuários</h3>
+        <p class="muted">Visualize e altere a categoria de cada usuário do sistema. A página será recarregada após salvar uma alteração.</p>
+        <div class="card">
+          <table id="table-users">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Email</th>
+                <th>Categoria Atual</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
     </main>
   </div>
 
@@ -712,35 +748,59 @@ function loadLocal(collectionName) {
   return all[collectionName] || [];
 }
 
+function getCollectionPath(collectionName) {
+  const impersonatedId = sessionStorage.getItem('impersonated_user_id');
+  const userId = impersonatedId || (CURRENT_USER ? CURRENT_USER.uid : null);
+
+  if (useLocalFallback || !userId) {
+    return collectionName; // Fallback para coleção global
+  }
+  // Todos os dados de um profissional são armazenados em uma subcoleção do seu documento de usuário
+  return `users/${userId}/${collectionName}`;
+}
+
 async function addItem(collectionName, data) {
+  const path = getCollectionPath(collectionName);
   if (useLocalFallback) {
-    const arr = loadLocal(collectionName);
+    const arr = loadLocal(path);
     data._id = Date.now().toString();
     arr.push(data);
-    saveLocal(collectionName, arr);
+    saveLocal(path, arr);
     return data;
   }
-  const col = collection(db, collectionName);
+  const col = collection(db, path);
   const ref = await addDoc(col, data);
   data._id = ref.id;
   return data;
 }
 
 async function setItem(collectionName, id, data) {
+  const path = getCollectionPath(collectionName);
   if (useLocalFallback) {
-    const arr = loadLocal(collectionName);
+    const arr = loadLocal(path);
     const idx = arr.findIndex(x => x._id === id);
     if (idx >= 0) arr[idx] = {...arr[idx], ...data};
-    saveLocal(collectionName, arr);
+    saveLocal(path, arr);
     return arr[idx];
   }
-  const ref = doc(db, collectionName, id);
+  const ref = doc(db, path, id);
   await setDoc(ref, data, {merge: true});
   return {...data, _id: id};
 }
 
 async function listItems(collectionName) {
-  if (useLocalFallback) return loadLocal(collectionName);
+  const path = getCollectionPath(collectionName);
+  if (useLocalFallback) return loadLocal(path);
+  const snapshot = await getDocs(collection(db, path));
+  const arr = [];
+  snapshot.forEach(d => arr.push({...d.data(), _id: d.id}));
+  return arr;
+}
+
+async function listGlobalItems(collectionName) {
+  // Esta função busca itens da coleção raiz, ignorando a estrutura de sub-coleções do usuário.
+  // Essencial para o admin ver todos os usuários.
+  if (useLocalFallback) return []; // Não aplicável para local storage neste caso
   const snapshot = await getDocs(collection(db, collectionName));
   const arr = [];
   snapshot.forEach(d => arr.push({...d.data(), _id: d.id}));
@@ -801,7 +861,14 @@ const els = {
   reportTableProducts: document.querySelector('#report-table-products tbody'),
   reportTableIngredients: document.querySelector('#report-table-ingredients tbody'),
   btnLogout: document.getElementById('btn-logout'),
-  userInfo: document.getElementById('user-info')
+  userInfo: document.getElementById('user-info'),
+  navUsuarios: document.getElementById('nav-usuarios'),
+  navMobileUsuarios: document.getElementById('nav-mobile-usuarios'),
+  navProfissionais: document.getElementById('nav-profissionais'),
+  navMobileProfissionais: document.getElementById('nav-mobile-profissionais'),
+  tableUsers: document.querySelector('#table-users tbody'),
+  professionalsList: document.getElementById('professionals-list'),
+  impersonationBanner: document.getElementById('impersonation-banner'),
 };
 
 const DEFAULT_PAGE = 'home';
@@ -869,6 +936,7 @@ let INGREDIENTS = [];
 let RECIPES = [];
 let PURCHASES = [];
 let ORDERS = [];
+let ALL_USERS = []; // Cache para a lista de usuários (apenas para admin)
 
 async function refreshAll() {
   if (!CURRENT_USER) {
@@ -876,6 +944,12 @@ async function refreshAll() {
     return;
   }
 
+  // Admin carrega a lista de todos os usuários
+  if (CURRENT_USER.categoria === 'adm') {
+    ALL_USERS = await listGlobalItems('users');
+    renderUsers();
+    renderProfessionals();
+  }
   INGREDIENTS = await listItems('ingredients');
   RECIPES = await listItems('recipes');
   PURCHASES = await listItems('purchases');
@@ -1577,6 +1651,37 @@ els.btnLogout.addEventListener('click', async () => {
   // O onAuthStateChanged vai cuidar do redirecionamento para a página de login.
 });
 
+els.professionalsList.addEventListener('click', (e) => {
+  const card = e.target.closest('[data-impersonate-id]');
+  if (!card) return;
+  e.preventDefault();
+  const professionalId = card.dataset.impersonateId;
+  sessionStorage.setItem('impersonated_user_id', professionalId);
+  window.location.hash = '#relatorios';
+  window.location.reload(); // Recarrega para garantir que todos os dados sejam do profissional
+});
+
+document.getElementById('exit-impersonation').addEventListener('click', () => {
+  sessionStorage.removeItem('impersonated_user_id');
+  window.location.hash = '#profissionais';
+  window.location.reload();
+});
+
+els.tableUsers.addEventListener('click', async (e) => {
+  if (e.target.dataset.action === 'save-category') {
+    const userId = e.target.dataset.userid;
+    const select = els.tableUsers.querySelector(`select[data-userid="${userId}"]`);
+    if (!userId || !select) return;
+
+    const newCategory = select.value;
+    console.log(`Alterando categoria do usuário ${userId} para ${newCategory}`);
+    
+    await setDoc(doc(db, 'users', userId), { categoria: newCategory }, { merge: true });
+    alert('Categoria do usuário atualizada com sucesso! A página será recarregada.');
+    window.location.reload();
+  }
+});
+
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     // Usuário está logado, buscar seu perfil no Firestore.
@@ -1589,6 +1694,16 @@ onAuthStateChanged(auth, async (user) => {
 
       // Exibe o corpo da página agora que sabemos quem é o usuário.
       document.body.style.display = 'block';
+
+      // Verifica se está em modo de personificação
+      const impersonatedId = sessionStorage.getItem('impersonated_user_id');
+      if (impersonatedId && CURRENT_USER.categoria === 'adm') {
+        const impersonatedUser = ALL_USERS.find(u => u._id === impersonatedId);
+        if (impersonatedUser) {
+          els.impersonationBanner.style.display = 'block';
+          els.impersonationBanner.querySelector('#impersonation-name').textContent = impersonatedUser.nome || impersonatedUser.email;
+        }
+      }
 
       // Atualiza a UI com base na categoria do usuário
       els.userInfo.textContent = `Logado como: ${CURRENT_USER.email} (${CURRENT_USER.categoria})`;
@@ -1604,12 +1719,23 @@ onAuthStateChanged(auth, async (user) => {
         if (els.mobileNavSelect.previousElementSibling) {
           els.mobileNavSelect.previousElementSibling.style.display = 'none';
         }
+        els.navUsuarios.style.display = 'none';
+        els.navMobileUsuarios.style.display = 'none';
+        els.navProfissionais.style.display = 'none';
+        els.navMobileProfissionais.style.display = 'none';
       } else {
         // Profissionais e Admins veem tudo (por enquanto)
         els.navLinks.forEach(link => link.style.display = 'flex');
         els.mobileNavSelect.style.display = 'block';
         if (els.mobileNavSelect.previousElementSibling) {
           els.mobileNavSelect.previousElementSibling.style.display = 'block';
+        }
+        // Apenas Admins veem a aba de usuários
+        if (isAdmin) {
+          els.navUsuarios.style.display = 'flex';
+          els.navMobileUsuarios.style.display = 'block';
+          els.navProfissionais.style.display = 'flex';
+          els.navMobileProfissionais.style.display = 'block';
         }
       }
 
