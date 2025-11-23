@@ -4,46 +4,122 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Achadinhos Deliciosos — Vitrine</title>
-  <link rel="stylesheet" href="https://unpkg.com/modern-css-reset/dist/reset.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
   <style>
-    :root{
-      font-family:"Inter", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-      --bg:#f4f6fb;
-      --card:#ffffff;
-      --text:#0f172a;
-      --muted:#6b7280;
-      --border:#e2e8f0;
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    body{ background:var(--bg); color:var(--text); }
+
+    :root{
+      font-family: 'Lato', "Segoe UI", system-ui, sans-serif;
+      --bg: #fcf8f5; /* Fundo creme/bege */
+      --card:#ffffff;
+      --text: #5c4b51; /* Cinza quente/marrom */
+      --muted: #a39398;
+      --border: #e6dcd2;
+      --primary: #d4a5a5; /* Rosa empoeirado */
+      --primary-dark: #b88a8a;
+    }
+    *{box-sizing:border-box}
+    body{ background:var(--bg); color:var(--text); margin:0; animation: fadeIn 0.8s ease-out; }
     main{ max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
     header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 16px; margin-bottom: 32px; }
-    h1 { font-size: 1.6rem; font-weight: 600; }
-    .user-info { font-size: 0.9rem; color: var(--muted); }
-    .btn{ cursor:pointer; background:linear-gradient(135deg,#ff9a8b,#ff6a88 45%,#ff99ac); color:#fff; border:none; font-weight:600; text-align:center; border-radius:999px; box-shadow:0 12px 25px rgba(255,106,136,0.35); padding: 8px 16px; font-size:0.9rem; }
-    .btn.ghost{ background:transparent; color:#ff6a88; border:1px solid rgba(255,106,136,0.4); box-shadow:none; }
-    .cards-grid{ display:grid; gap:20px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
-    .card{ background:var(--card); border-radius:16px; padding:20px; box-shadow:0 20px 45px rgba(15,23,42,0.08); border:1px solid rgba(15,23,42,0.05); }
-    .product-card h4 { margin: 0 0 8px; }
-    .product-card p { margin: 0; font-size: 0.9rem; color: var(--muted); }
+    h1, h2, h3, h4, h5 { font-family: 'Playfair Display', serif; color: var(--text); }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.8rem; margin-bottom: 8px; }
+    .header-actions { display: flex; align-items: center; gap: 20px; }
+    .btn{ cursor:pointer; background:var(--primary); color:#fff; border:none; font-weight:bold; text-align:center; border-radius:8px; box-shadow:0 4px 15px rgba(212, 165, 165, 0.3); padding: 12px 24px; font-size:0.9rem; transition: all .3s ease; letter-spacing: 0.5px; }
+    .btn:hover { transform: translateY(-3px); box-shadow:0 8px 25px rgba(212, 165, 165, 0.4); background: var(--primary-dark); }
+    .btn.ghost{ background:transparent; color:var(--primary-dark); border:1px solid var(--primary); box-shadow:none; }
+    .btn.ghost:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .btn.added {
+      background: #5c4b51; /* Usa a cor do texto para um feedback elegante */
+      box-shadow: 0 4px 15px rgba(92, 75, 81, 0.3);
+      cursor: default;
+    }
+    .cart-button { position: relative; background: none; border: none; cursor: pointer; }
+    .cart-icon { width: 32px; height: 32px; color: var(--text); transition: color .2s ease; }
+    .cart-button:hover .cart-icon { color: var(--primary-dark); }
+    .cart-badge { position: absolute; top: -8px; right: -8px; background: var(--primary-dark); color: #fff; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: bold; border: 2px solid var(--bg); }
+    .cards-grid{ display:grid; gap:24px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); }
+    .card{ background:var(--card); border-radius:12px; padding:24px; box-shadow:0 4px 25px rgba(92, 75, 81, 0.05); border:1px solid var(--border); display: flex; flex-direction: column; transition: all .3s ease; }
+    .product-card { justify-content: space-between; text-align: center; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 12px 35px rgba(92, 75, 81, 0.1); }
+    .product-card h4 { margin: 0 0 8px; font-size: 1.3rem; }
+    .product-card .price { margin: 0; font-size: 0.95rem; color: var(--muted); }
+    .product-card-footer { margin-top: 16px; }
+    .product-card .btn { width: 100%; margin-top: 12px; }
+
+    @media (min-width: 640px) { /* A partir de 640px de largura, aplica o layout de desktop */
+      .product-card { text-align: left; }
+      .product-card-footer { display: flex; justify-content: space-between; align-items: center; }
+      .product-card .price { margin: 0; }
+      .product-card .btn { width: auto; margin-top: 0; }
+    }
+
+    /* Estilos do Carrinho */
+    .cart-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); z-index: 99; opacity: 0; visibility: hidden; transition: all .3s ease; }
+    .cart-overlay.active { opacity: 1; visibility: visible; }
+    .cart-sidebar { position: fixed; top: 0; right: -100%; width: 100%; max-width: 450px; height: 100%; background: var(--card); z-index: 100; box-shadow: -10px 0 30px rgba(0,0,0,0.1); display: flex; flex-direction: column; transition: right .4s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+    .cart-sidebar.active { right: 0; }
+    .cart-header { padding: 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+    .cart-header h3 { font-size: 1.4rem; margin: 0; }
+    .cart-header .close-cart { font-size: 1.5rem; background: none; border: none; cursor: pointer; color: var(--muted); }
+    .cart-items { flex-grow: 1; overflow-y: auto; padding: 20px; }
+    .cart-item { display: flex; gap: 16px; align-items: center; padding-bottom: 16px; margin-bottom: 16px; border-bottom: 1px solid var(--border); }
+    .cart-item-info { flex-grow: 1; }
+    .cart-item-info h5 { margin: 0 0 4px; font-size: 1.1rem; }
+    .cart-item-info p { margin: 0; color: var(--muted); font-size: 0.9rem; }
+    .cart-item-actions { display: flex; align-items: center; gap: 8px; }
+    .cart-item-actions button { width: 30px; height: 30px; border: 1px solid var(--border); background: #fff; cursor: pointer; border-radius: 8px; font-weight: bold; transition: all .2s ease; }
+    .cart-item-actions button:hover { background: var(--bg); border-color: var(--muted); }
+    .cart-item-actions .remove-item { color: #ef4444; font-size: 1.2rem; }
+    .cart-footer { padding: 20px; border-top: 1px solid var(--border); background: var(--bg); }
+    .cart-total { display: flex; justify-content: space-between; font-size: 1.2rem; font-weight: bold; margin-bottom: 16px; }
   </style>
 </head>
 <body>
 
   <main>
     <header>
-      <div>
-        <h1 id="cliente-welcome">Carregando...</h1>
+      <h1 id="cliente-welcome">Carregando...</h1>
+      <div class="header-actions">
+        <button id="cart-button" class="cart-button">
+          <svg class="cart-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+          <span class="cart-badge" style="display: none;">0</span>
+        </button>
+        <button id="btn-logout" class="btn ghost">Sair</button>
       </div>
-      <button id="btn-logout" class="btn ghost">Sair</button>
     </header>
 
     <h2>Produtos Disponíveis</h2>
-    <p style="color: var(--muted); margin-bottom: 24px;">Abaixo estão os produtos disponíveis para encomenda. Em breve, mais funcionalidades!</p>
+    <p style="color: var(--muted); margin-bottom: 24px; max-width: 600px;">Explore nossa seleção de doces feitos com carinho. Adicione seus favoritos ao carrinho e finalize sua encomenda.</p>
     
     <div id="public-products-list" class="cards-grid">
-      <p>Carregando produtos...</p>
+      <p class="muted">Carregando produtos...</p>
     </div>
   </main>
+
+  <div id="cart-overlay" class="cart-overlay"></div>
+  <div id="cart-sidebar" class="cart-sidebar">
+    <div class="cart-header">
+      <h3>Seu Carrinho</h3>
+      <button class="close-cart">×</button>
+    </div>
+    <div id="cart-items" class="cart-items">
+      <!-- Itens do carrinho serão inseridos aqui -->
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total</span>
+        <span id="cart-total-price">R$ 0,00</span>
+      </div>
+      <button id="checkout-button" class="btn" style="width: 100%;">Finalizar Encomenda</button>
+    </div>
+  </div>
 
 <script type="module">
   const firebaseConfig = {
@@ -63,38 +139,183 @@
   const auth = getAuth(app);
   const db = getFirestore(app);
 
+  let cart = [];
+
   function toBRL(v){ return Number(v || 0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}) }
 
   async function renderPublicRecipes() {
     const publicProductsList = document.getElementById('public-products-list');
     const usersSnapshot = await getDocs(collection(db, 'users'));
-    const professional = usersSnapshot.docs.map(d => d.data()).find(u => u.categoria === 'profissional');
+    // Simplificado para pegar o primeiro profissional. Em um sistema real, o cliente teria um ID de profissional associado.
+    const professionalDoc = usersSnapshot.docs.find(d => d.data().categoria === 'profissional');
 
-    if (!professional) {
+    if (!professionalDoc) {
       publicProductsList.innerHTML = '<p class="muted">Nenhum profissional configurado no sistema ainda.</p>';
       return;
     }
 
-    // O ID do documento do profissional é o ID do usuário dele
-    const professionalId = usersSnapshot.docs.find(d => d.data().email === professional.email).id;
-    const publicRecipesPath = `users/${professionalId}/recipes`;
+    const publicRecipesPath = `users/${professionalDoc.id}/recipes`;
     const q = query(collection(db, publicRecipesPath), where("publica", "==", true));
     const snapshot = await getDocs(q);
     
     publicProductsList.innerHTML = '';
     if (snapshot.empty) {
-      publicProductsList.innerHTML = '<p class="muted">Nenhum produto disponível na loja no momento.</p>';
+      publicProductsList.innerHTML = '<p class="muted" style="grid-column: 1 / -1;">Nenhum produto disponível na loja no momento.</p>';
       return;
     }
 
     snapshot.forEach(doc => {
       const recipe = doc.data();
+      const recipeId = doc.id;
       const card = document.createElement('div');
       card.className = 'card product-card';
-      card.innerHTML = `<h4>${recipe.nome}</h4><p>${toBRL(recipe.preco_base)} / ${recipe.preco_tipo}</p>`;
+      card.innerHTML = `
+        <div class="product-card-body">
+          <h4>${recipe.nome}</h4>
+        </div>
+        <div class="product-card-footer">
+          <p class="price">${toBRL(recipe.preco_base)} / ${recipe.preco_tipo}</p>
+          <button class="btn add-to-cart-btn" data-id="${recipeId}" data-nome="${recipe.nome}" data-preco="${recipe.preco_base}" data-tipo="${recipe.preco_tipo}">Adicionar</button>
+        </div>
+      `;
       publicProductsList.appendChild(card);
     });
   }
+
+  function saveCart() {
+    sessionStorage.setItem('shoppingCart', JSON.stringify(cart));
+  }
+
+  function loadCart() {
+    const storedCart = sessionStorage.getItem('shoppingCart');
+    if (storedCart) {
+      cart = JSON.parse(storedCart);
+    }
+    renderCart();
+  }
+
+  function renderCart() {
+    const cartItemsContainer = document.getElementById('cart-items');
+    const cartBadge = document.querySelector('.cart-badge');
+    const cartTotalPrice = document.getElementById('cart-total-price');
+    
+    cartItemsContainer.innerHTML = '';
+    let totalItems = 0;
+    let totalPrice = 0;
+
+    if (cart.length === 0) {
+      cartItemsContainer.innerHTML = '<p class="muted">Seu carrinho está vazio.</p>';
+    } else {
+      cart.forEach(item => {
+        const itemEl = document.createElement('div');
+        itemEl.className = 'cart-item';
+        itemEl.innerHTML = `
+          <div class="cart-item-info">
+            <h5>${item.nome}</h5>
+            <p>${toBRL(item.preco)} / ${item.tipo}</p>
+          </div>
+          <div class="cart-item-actions">
+            <button class="quantity-change" data-id="${item.id}" data-amount="-1">-</button>
+            <span>${item.quantity}</span>
+            <button class="quantity-change" data-id="${item.id}" data-amount="1">+</button>
+            <button title="Remover item" class="remove-item" data-id="${item.id}">×</button>
+          </div>
+        `;
+        cartItemsContainer.appendChild(itemEl);
+        totalItems += item.quantity;
+        totalPrice += item.preco * item.quantity;
+      });
+    }
+
+    cartBadge.textContent = totalItems;
+    cartBadge.style.display = totalItems > 0 ? 'flex' : 'none';
+    cartTotalPrice.textContent = toBRL(totalPrice);
+  }
+
+  function addToCart(product) {
+    const existingItem = cart.find(item => item.id === product.id);
+    if (existingItem) {
+      existingItem.quantity++;
+    } else {
+      cart.push({ ...product, quantity: 1 });
+    }
+    saveCart();
+    renderCart();
+  }
+
+  function changeQuantity(productId, amount) {
+    const item = cart.find(i => i.id === productId);
+    if (item) {
+      item.quantity += amount;
+      if (item.quantity <= 0) {
+        cart = cart.filter(i => i.id !== productId);
+      }
+    }
+    saveCart();
+    renderCart();
+  }
+
+  // --- Event Listeners ---
+
+  document.getElementById('public-products-list').addEventListener('click', (e) => {
+    const button = e.target.closest('.add-to-cart-btn');
+    if (button && !button.disabled) {
+      const productData = button.dataset;
+      addToCart({
+        id: productData.id,
+        nome: productData.nome,
+        preco: parseFloat(productData.preco),
+        tipo: productData.tipo
+      });
+
+      // --- Início: Lógica de Feedback Visual ---
+      const originalText = button.textContent;
+      button.textContent = 'Adicionado!';
+      button.classList.add('added');
+      button.disabled = true; // Desabilita o botão temporariamente
+
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.classList.remove('added');
+        button.disabled = false; // Reabilita o botão
+      }, 1500); // O feedback dura 1.5 segundos
+      // --- Fim: Lógica de Feedback Visual ---
+    }
+  });
+
+  document.getElementById('cart-items').addEventListener('click', (e) => {
+    const target = e.target;
+    if (target.classList.contains('quantity-change')) {
+      changeQuantity(target.dataset.id, parseInt(target.dataset.amount));
+    }
+    if (target.classList.contains('remove-item')) {
+      changeQuantity(target.dataset.id, -Infinity); // Remove o item
+    }
+  });
+
+  const cartSidebar = document.getElementById('cart-sidebar');
+  const cartOverlay = document.getElementById('cart-overlay');
+  const openCartButtons = [document.getElementById('cart-button')];
+  const closeCartButtons = [document.querySelector('.close-cart'), cartOverlay];
+
+  openCartButtons.forEach(btn => btn.addEventListener('click', () => {
+    cartSidebar.classList.add('active');
+    cartOverlay.classList.add('active');
+  }));
+
+  closeCartButtons.forEach(btn => btn.addEventListener('click', () => {
+    cartSidebar.classList.remove('active');
+    cartOverlay.classList.remove('active');
+  }));
+
+  document.getElementById('checkout-button').addEventListener('click', () => {
+    if (cart.length === 0) {
+      alert('Seu carrinho está vazio!');
+      return;
+    }
+    // Lógica futura de checkout
+    alert('Funcionalidade de finalizar compra em desenvolvimento!');
+  });
 
   onAuthStateChanged(auth, async (user) => {
     if (user) {
@@ -111,6 +332,7 @@
         const firstName = (userData.nome || '').split(' ')[0];
         document.getElementById('cliente-welcome').textContent = `Bem vindo, ${firstName}!`;
         renderPublicRecipes();
+        loadCart();
       }
     } else {
       window.location.replace('login.html');
