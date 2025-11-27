@@ -322,6 +322,12 @@
     }
     .status-chip.pending{background:#fee2e2;color:#991b1b}
     .status-chip.done{background:#dcfce7;color:#166534}
+    .payment-status-chip{
+      border:none; border-radius:999px; padding:4px 10px; font-size:0.8rem;
+      font-weight:600; cursor:pointer; align-self:flex-start;
+    }
+    .payment-status-chip.unpaid{background:#fffbeb;color:#b45309}
+    .payment-status-chip.paid{background:#dcfce7;color:#166534}
 
     /* Animação para reordenar a tabela */
     #table-sales tbody tr {
@@ -386,6 +392,11 @@
       #table-sales th:nth-child(n+4),
       #table-sales td:nth-child(n+4) {
         display: none;
+      }
+      /* Garante que status e pagamento fiquem visíveis no mobile */
+      #table-sales th:nth-child(9), #table-sales td:nth-child(9),
+      #table-sales th:nth-child(10), #table-sales td:nth-child(10) {
+        display: table-cell;
       }
     }
     .user-info { margin-left: auto; font-size: 0.9rem; opacity: 0.9; }
@@ -628,6 +639,11 @@
               <input id="sale-kg" type="number" step="any" value="1" required />
               <label for="sale-obs">Observações</label>
               <textarea id="sale-obs" placeholder="Ex: Bolo sem nozes, embalar para presente" rows="3"></textarea>
+              <label for="sale-payment-status">Status do Pagamento</label>
+              <select id="sale-payment-status">
+                  <option value="unpaid" selected>A Pagar</option>
+                  <option value="paid">Pago</option>
+              </select>
               <div class="actions">
                 <button class="btn" type="submit">Registrar venda</button>
                 <button class="btn ghost" id="btn-clear-sale" type="button">Limpar</button>
@@ -671,10 +687,11 @@
                 <th>Lucro</th>
                 <th>Observações</th>
                 <th>Status</th>
+                <th>Pagamento</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="9" class="muted">Nenhuma venda registrada ainda.</td></tr>
+              <tr><td colspan="10" class="muted">Nenhuma venda registrada ainda.</td></tr>
             </tbody>
           </table>
         </article>
@@ -739,6 +756,11 @@
         <select id="edit-sale-status-select">
             <option value="pending">Pendente</option>
             <option value="done">Feito</option>
+        </select>
+        <label for="edit-sale-payment-status">Status do Pagamento</label>
+        <select id="edit-sale-payment-status">
+            <option value="unpaid">A Pagar</option>
+            <option value="paid">Pago</option>
         </select>
 
         <div style="margin-top: 16px; font-size: 0.9rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;">
@@ -909,6 +931,7 @@ const els = {
   saleDelivery: document.getElementById('sale-delivery'),
   saleKg: document.getElementById('sale-kg'),
   saleObs: document.getElementById('sale-obs'),
+  salePaymentStatus: document.getElementById('sale-payment-status'),
   saleResult: document.getElementById('sale-result'),
   navLinks: Array.from(document.querySelectorAll('.nav a')),
   homeCardLinks: Array.from(document.querySelectorAll('.home-card')),
@@ -941,6 +964,7 @@ const els = {
   editSaleCost: document.getElementById('edit-sale-cost'),
   editSaleProfit: document.getElementById('edit-sale-profit'),
   editSaleStatusSelect: document.getElementById('edit-sale-status-select'),
+  editSalePaymentStatus: document.getElementById('edit-sale-payment-status'),
 };
 
 const DEFAULT_PAGE = 'home';
@@ -1180,7 +1204,7 @@ function renderSalesTable(monthYearKey = null){
 
   els.salesTableBody.innerHTML = '';
   if(!ordersToDisplay.length){
-    els.salesTableBody.innerHTML = `<tr><td colspan="9" class="muted">Nenhuma venda registrada para o período selecionado.</td></tr>`;
+    els.salesTableBody.innerHTML = `<tr><td colspan="10" class="muted">Nenhuma venda registrada para o período selecionado.</td></tr>`;
   } else {
     const sorted = [...ordersToDisplay].sort((a, b) => {
       // 1. Pedidos 'done' vão para o final.
@@ -1195,10 +1219,13 @@ function renderSalesTable(monthYearKey = null){
       const lucro = Number(order.priceSell||0) - Number(order.totalCost||0);
       const deliveryLabel = formatDelivery(order.deliveryDate);
       const status = order.status === 'done' ? 'done' : 'pending';
+      const paymentStatus = order.paymentStatus || 'unpaid';
+      const paymentLabel = paymentStatus === 'paid' ? 'Pago' : 'A Pagar';
+      const paymentClass = paymentStatus === 'paid' ? 'paid' : 'unpaid';
       const qtyLabel = formatQuantityDisplay(order.kg || 0, order.priceType || 'kg');
       const tr = document.createElement('tr');
       tr.dataset.orderId = order._id;
-      tr.innerHTML = `<td>${order.customer || '—'}</td><td>${order.recipe_name || '—'}</td><td>${deliveryLabel}</td><td>${qtyLabel}</td><td>${toBRL(order.priceSell||0)}</td><td>${toBRL(order.totalCost||0)}</td><td>${toBRL(lucro)}</td><td>${order.obs || '—'}</td><td><button type="button" class="status-chip ${status}" data-id="${order._id}">${status === 'done' ? 'Feito' : 'Pendente'}</button></td>`;
+      tr.innerHTML = `<td>${order.customer || '—'}</td><td>${order.recipe_name || '—'}</td><td>${deliveryLabel}</td><td>${qtyLabel}</td><td>${toBRL(order.priceSell||0)}</td><td>${toBRL(order.totalCost||0)}</td><td>${toBRL(lucro)}</td><td>${order.obs || '—'}</td><td><button type="button" class="status-chip ${status}" data-id="${order._id}">${status === 'done' ? 'Feito' : 'Pendente'}</button></td><td><button type="button" class="payment-status-chip ${paymentClass}" data-id="${order._id}">${paymentLabel}</button></td>`;
       els.salesTableBody.appendChild(tr);
     });
   }
@@ -1272,17 +1299,19 @@ function renderCalendarDayDetails(dateKey){
   const list = items.map(item=>{
     const status = item.status === 'done' ? 'done' : 'pending';
     const statusLabel = status === 'done' ? 'Feito' : 'Pendente';
-    const actionLabel = status === 'done' ? 'Marcar como pendente' : 'Marcar como feito';
+    const paymentStatus = item.paymentStatus || 'unpaid';
+    const paymentLabel = paymentStatus === 'paid' ? 'Pago' : 'A Pagar';
+    const paymentClass = paymentStatus === 'paid' ? 'paid' : 'unpaid';
     const lucro = Number(item.priceSell||0) - Number(item.totalCost||0);
     return `
       <li>
       <li data-order-id="${item._id}" style="cursor: pointer;">
         <strong>${item.recipe_name || 'Receita'}</strong>
         <span>${item.customer || 'Cliente não informado'} · ${formatQuantityDisplay(item.kg || 0, item.priceType || 'kg')}</span>
+        <span style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+            <span class="status-chip ${status}">${statusLabel}</span><span class="payment-status-chip ${paymentClass}">${paymentLabel}</span></span>
         <span>${toBRL(item.priceSell||0)} venda • ${toBRL(item.totalCost||0)} custo • lucro ${toBRL(lucro)}</span>
         ${item.obs ? `<span class="muted" style="font-style: italic;">Obs: ${item.obs}</span>` : ''}
-        <button type="button" class="status-chip ${status}" data-id="${item._id}">${actionLabel}</button>
-        <small class="muted">${statusLabel}</small>
       </li>
     `;
   }).join('');
@@ -1416,7 +1445,7 @@ if(els.calendarNext){
 }
 
 document.addEventListener('click', async (ev)=>{
-    const chip = ev.target.closest('.status-chip');
+    const chip = ev.target.closest('.status-chip, .payment-status-chip');
     if (!chip) return;
     const orderId = chip.dataset.id;
     if (!orderId) return;
@@ -1424,25 +1453,32 @@ document.addEventListener('click', async (ev)=>{
     if (!order) return;
 
     const nextStatus = order.status === 'done' ? 'pending' : 'done';
-
-    // Guarda o mês/ano atual da visualização para recarregar a tabela corretamente.
     const currentVisibleMonth = `${calendarState.current.getFullYear()}-${pad(calendarState.current.getMonth() + 1)}`;
 
-    // Animação de saída
-    const tr = document.querySelector(`#table-sales tr[data-order-id="${orderId}"]`);
-    if (tr && nextStatus === 'done') {
-        tr.classList.add('moving-out');
-        // Aguarda a animação de saída antes de recarregar
-        setTimeout(async () => {
-          await setItem('orders', orderId, { status: nextStatus });
-          await refreshAll();
-          renderSalesTable(currentVisibleMonth); // Recarrega a tabela para o mês correto
-        }, 500); // Mesmo tempo da transição CSS
+    if (chip.classList.contains('status-chip')) {
+        const tr = document.querySelector(`#table-sales tr[data-order-id="${orderId}"]`);
+        if (tr && nextStatus === 'done') {
+            tr.classList.add('moving-out');
+            setTimeout(async () => {
+                await setItem('orders', orderId, { status: nextStatus });
+                await refreshAll();
+                renderSalesTable(currentVisibleMonth);
+            }, 500);
+        } else {
+            await setItem('orders', orderId, { status: nextStatus });
+            await refreshAll();
+            renderSalesTable(currentVisibleMonth);
+        }
+    } else if (chip.classList.contains('payment-status-chip')) {
+        const nextPaymentStatus = (order.paymentStatus || 'unpaid') === 'paid' ? 'unpaid' : 'paid';
+        await setItem('orders', orderId, { paymentStatus: nextPaymentStatus });
+        // Não precisa de animação, apenas atualiza
+        await refreshAll();
+        renderSalesTable(currentVisibleMonth);
     } else {
-        // Se não houver animação (ou for para 'pending'), atualiza imediatamente
-      await setItem('orders', orderId, { status: nextStatus });
-      await refreshAll();
-      renderSalesTable(currentVisibleMonth); // Recarrega a tabela para o mês correto
+        // Fallback, caso necessário
+        await refreshAll();
+        renderSalesTable(currentVisibleMonth);
     }
 });
 
@@ -1668,6 +1704,7 @@ if(els.saleForm){
     if(!deliveryDate){ alert('Informe a data de entrega'); return; }
     const quantity = Number(els.saleKg.value) || 1;
     const priceInfo = getRecipePriceInfo(recipe);
+    const paymentStatus = els.salePaymentStatus.value;
     const obs = els.saleObs.value.trim();
     const priceSell = calculateRecipePrice(recipe, quantity);
     const scale = quantity / (recipe.porcao_padrao_kg || 1);
@@ -1721,6 +1758,7 @@ if(els.saleForm){
       lucro,
       obs,
       priceType: priceInfo.type,
+      paymentStatus: paymentStatus,
       status:'pending',
       createdAt:Date.now()
     });
@@ -1746,6 +1784,7 @@ function openSaleEditModal(orderId) {
   els.editSaleCost.textContent = toBRL(order.totalCost || 0);
   els.editSaleProfit.textContent = toBRL(order.lucro || 0);
   els.editSaleStatusSelect.value = order.status || 'pending';
+  els.editSalePaymentStatus.value = order.paymentStatus || 'unpaid';
 
   els.saleEditModal.classList.add('visible');
 }
@@ -1757,7 +1796,7 @@ function closeSaleEditModal() {
 
 els.salesTableBody.addEventListener('click', (ev) => {
   // Impede que o clique no botão de status abra o modal
-  if (ev.target.closest('.status-chip')) {
+  if (ev.target.closest('.status-chip, .payment-status-chip')) {
     return;
   }
   const row = ev.target.closest('tr');
@@ -1768,7 +1807,7 @@ els.salesTableBody.addEventListener('click', (ev) => {
 
 els.calendarDayDetails.addEventListener('click', (ev) => {
   // Impede que o clique no botão de status abra o modal
-  if (ev.target.closest('.status-chip')) {
+  if (ev.target.closest('.status-chip, .payment-status-chip')) {
     return;
   }
   const listItem = ev.target.closest('li[data-order-id]');
@@ -1816,6 +1855,7 @@ els.formEditSale.addEventListener('submit', async (ev) => {
   const newDeliveryDate = els.editSaleDelivery.value;
   const newObs = els.editSaleObs.value.trim();
   const newStatus = els.editSaleStatusSelect.value;
+  const newPaymentStatus = els.editSalePaymentStatus.value;
 
   // Recalcular preço e custo com a nova quantidade
   const newPriceSell = calculateRecipePrice(recipe, newQuantity);
@@ -1836,6 +1876,7 @@ els.formEditSale.addEventListener('submit', async (ev) => {
     totalCost: newTotalCost,
     lucro: newPriceSell - newTotalCost,
     status: newStatus,
+    paymentStatus: newPaymentStatus,
   };
 
   // ATENÇÃO: A lógica de devolução/retirada de insumos do estoque não foi implementada
