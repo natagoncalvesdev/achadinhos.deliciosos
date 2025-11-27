@@ -335,6 +335,36 @@
     #report-cost{color:#dc2626;}
     #report-profit{color:#16a34a;}
 
+    /* Estilos do Modal */
+    .modal-backdrop {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      display: none; /* Começa escondido */
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+    .modal-backdrop.visible {
+      display: flex;
+    }
+    .modal-content {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 24px 28px;
+      width: 90%;
+      max-width: 560px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-content h3 { margin: 0 0 16px; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 24px; justify-content: flex-end; }
+    .btn.danger { background: #ef4444; box-shadow: 0 12px 25px rgba(239, 68, 68, 0.35); }
+    .btn.danger:hover { box-shadow: 0 16px 30px rgba(239, 68, 68, 0.45); }
+
     @media(max-width:960px){
       .app{flex-direction:column;}
       .sidebar{width:100%;flex-direction:row;flex-wrap:wrap;gap:16px;}
@@ -674,6 +704,28 @@
     </main>
   </div>
 
+  <!-- Modal para Edição de Venda -->
+  <div id="sale-edit-modal" class="modal-backdrop">
+    <div class="modal-content">
+      <h3>Editar Venda</h3>
+      <form id="form-edit-sale">
+        <input type="hidden" id="edit-sale-id">
+        <label for="edit-sale-customer">Cliente</label>
+        <input id="edit-sale-customer" required />
+        <label for="edit-sale-delivery">Data de entrega</label>
+        <input id="edit-sale-delivery" type="date" required />
+        <label for="edit-sale-kg">Quantidade (kg ou unidades)</label>
+        <input id="edit-sale-kg" type="number" step="any" required />
+        <label for="edit-sale-obs">Observações</label>
+        <textarea id="edit-sale-obs" rows="3"></textarea>
+        <div class="modal-actions">
+          <button type="button" id="btn-delete-sale" class="btn danger">Excluir</button>
+          <button type="submit" class="btn">Salvar Alterações</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
 <!-- ====== SCRIPT (usa Firebase modular via CDN) ====== -->
 <script type="module">
 const firebaseConfig = {
@@ -690,7 +742,7 @@ if (!firebaseConfig) {
 }
 
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot, updateDoc, query, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, collection, doc, addDoc, setDoc, getDoc, getDocs, onSnapshot, updateDoc, query, writeBatch, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
 
 let db = null;
@@ -779,6 +831,19 @@ async function listItems(collectionName) {
   return arr;
 }
 
+async function deleteItem(collectionName, id) {
+  const path = getCollectionPath(collectionName);
+  if (useLocalFallback) {
+    let arr = loadLocal(path);
+    arr = arr.filter(x => x._id !== id);
+    saveLocal(path, arr);
+    return;
+  }
+  const ref = doc(db, path, id);
+  await deleteDoc(ref);
+}
+
+
 // ---------- App State & UI ----------
 let CURRENT_USER = null;
 const els = {
@@ -835,7 +900,14 @@ const els = {
   reportTableIngredients: document.querySelector('#report-table-ingredients tbody'),
   btnLogout: document.getElementById('btn-logout'),
   brandSpan: document.querySelector('.brand span'),
-  pageHeader: document.querySelector('.page-header')
+  pageHeader: document.querySelector('.page-header'),
+  saleEditModal: document.getElementById('sale-edit-modal'),
+  formEditSale: document.getElementById('form-edit-sale'),
+  editSaleId: document.getElementById('edit-sale-id'),
+  editSaleCustomer: document.getElementById('edit-sale-customer'),
+  editSaleDelivery: document.getElementById('edit-sale-delivery'),
+  editSaleKg: document.getElementById('edit-sale-kg'),
+  editSaleObs: document.getElementById('edit-sale-obs'),
 };
 
 const DEFAULT_PAGE = 'home';
@@ -1061,6 +1133,7 @@ function renderSales(){
       const status = order.status === 'done' ? 'done' : 'pending';
       const qtyLabel = formatQuantityDisplay(order.kg || 0, order.priceType || 'kg');
       const tr = document.createElement('tr');
+      tr.dataset.orderId = order._id;
       tr.innerHTML = `
         <td>${order.customer || '—'}</td>
         <td>${order.recipe_name || '—'}</td>
@@ -1585,6 +1658,103 @@ if(els.saleForm){
     if(els.saleKg) els.saleKg.value = 1;
   });
 }
+
+function openSaleEditModal(orderId) {
+  const order = ORDERS.find(o => o._id === orderId);
+  if (!order) return;
+
+  els.editSaleId.value = order._id;
+  els.editSaleCustomer.value = order.customer;
+  els.editSaleDelivery.value = order.deliveryDate;
+  els.editSaleKg.value = order.kg;
+  els.editSaleObs.value = order.obs || '';
+
+  els.saleEditModal.classList.add('visible');
+}
+
+function closeSaleEditModal() {
+  els.saleEditModal.classList.remove('visible');
+  els.formEditSale.reset();
+}
+
+els.salesTableBody.addEventListener('click', (ev) => {
+  // Impede que o clique no botão de status abra o modal
+  if (ev.target.closest('.status-chip')) {
+    return;
+  }
+  const row = ev.target.closest('tr');
+  if (row && row.dataset.orderId) {
+    openSaleEditModal(row.dataset.orderId);
+  }
+});
+
+els.saleEditModal.addEventListener('click', (ev) => {
+  if (ev.target === els.saleEditModal) {
+    closeSaleEditModal();
+  }
+});
+
+document.getElementById('btn-delete-sale').addEventListener('click', async () => {
+  const orderId = els.editSaleId.value;
+  if (!orderId) return;
+
+  if (confirm('Tem certeza que deseja excluir esta venda? Esta ação não pode ser desfeita e os insumos não serão repostos no estoque.')) {
+    await deleteItem('orders', orderId);
+    closeSaleEditModal();
+    await refreshAll();
+    alert('Venda excluída com sucesso.');
+  }
+});
+
+els.formEditSale.addEventListener('submit', async (ev) => {
+  ev.preventDefault();
+  const orderId = els.editSaleId.value;
+  const originalOrder = ORDERS.find(o => o._id === orderId);
+  if (!originalOrder) {
+    alert('Erro: Venda original não encontrada.');
+    return;
+  }
+
+  const recipe = RECIPES.find(r => r._id === originalOrder.recipe_id);
+  if (!recipe) {
+    alert('Erro: Receita associada não encontrada.');
+    return;
+  }
+
+  // Novos dados do formulário
+  const newQuantity = Number(els.editSaleKg.value);
+  const newCustomer = els.editSaleCustomer.value.trim();
+  const newDeliveryDate = els.editSaleDelivery.value;
+  const newObs = els.editSaleObs.value.trim();
+
+  // Recalcular preço e custo com a nova quantidade
+  const newPriceSell = calculateRecipePrice(recipe, newQuantity);
+  const scale = newQuantity / (recipe.porcao_padrao_kg || 1);
+  const newTotalCost = (recipe.ingredientes || []).reduce((sum, item) => {
+    const ing = INGREDIENTS.find(i => i._id === item.ingrediente_id);
+    const needed = Number(item.quantidade) * scale;
+    const cost = needed * (ing?.preco_unitario || 0);
+    return sum + cost;
+  }, 0);
+
+  const updatedOrderData = {
+    customer: newCustomer,
+    deliveryDate: newDeliveryDate,
+    kg: newQuantity,
+    obs: newObs,
+    priceSell: newPriceSell,
+    totalCost: newTotalCost,
+    lucro: newPriceSell - newTotalCost,
+  };
+
+  // ATENÇÃO: A lógica de devolução/retirada de insumos do estoque não foi implementada
+  // para simplificar. A alteração da venda NÃO ajustará o estoque.
+
+  await setItem('orders', orderId, updatedOrderData);
+  closeSaleEditModal();
+  await refreshAll();
+  alert('Venda atualizada com sucesso!');
+});
 
 const btnClearSale = document.getElementById('btn-clear-sale');
 if(btnClearSale){
