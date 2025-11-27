@@ -1836,6 +1836,11 @@ els.formEditSale.addEventListener('submit', async (ev) => {
   // para simplificar. A alteração da venda NÃO ajustará o estoque.
 
   await setItem('orders', orderId, updatedOrderData);
+
+  // Atualiza o estado do calendário para refletir a nova data
+  calendarState.current = new Date(`${newDeliveryDate}T00:00:00`);
+  calendarState.selectedKey = newDeliveryDate;
+
   closeSaleEditModal();
   await refreshAll();
   alert('Venda atualizada com sucesso!');
