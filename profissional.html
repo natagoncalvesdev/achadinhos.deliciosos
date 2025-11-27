@@ -323,6 +323,17 @@
     .status-chip.pending{background:#fee2e2;color:#991b1b}
     .status-chip.done{background:#dcfce7;color:#166534}
 
+    /* Animação para reordenar a tabela */
+    #table-sales tbody tr {
+      transition: transform 0.5s ease-in-out, opacity 0.5s ease-in-out;
+    }
+    #table-sales tbody tr.moving-out {
+      transform: translateY(20px);
+      opacity: 0;
+    }
+    #table-sales tbody tr.moving-in {
+      transition: none; /* Evita a transição na inserção inicial */
+    }
     .mobile-nav{display:none}
     .report-summary{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;}
     .report-summary .card{text-align:center;}
@@ -370,6 +381,12 @@
       .sidebar{width:100%;flex-direction:row;flex-wrap:wrap;gap:16px;}
       .sidebar footer{width:100%;}
       main{padding:24px;}
+
+      /* Ajuste da tabela de vendas para mobile */
+      #table-sales th:nth-child(n+4),
+      #table-sales td:nth-child(n+4) {
+        display: none;
+      }
     }
     .user-info { margin-left: auto; font-size: 0.9rem; opacity: 0.9; }
   </style>
@@ -718,6 +735,18 @@
         <input id="edit-sale-kg" type="number" step="any" required />
         <label for="edit-sale-obs">Observações</label>
         <textarea id="edit-sale-obs" rows="3"></textarea>
+        <label for="edit-sale-status-select">Status do Pedido</label>
+        <select id="edit-sale-status-select">
+            <option value="pending">Pendente</option>
+            <option value="done">Feito</option>
+        </select>
+
+        <div style="margin-top: 16px; font-size: 0.9rem; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 16px;">
+            <div><strong style="color: var(--muted); display: block;">Preço de Venda:</strong> <span id="edit-sale-price"></span></div>
+            <div><strong style="color: var(--muted); display: block;">Custo:</strong> <span id="edit-sale-cost"></span></div>
+            <div><strong style="color: var(--muted); display: block;">Lucro:</strong> <span id="edit-sale-profit"></span></div>
+            
+        </div>
         <div class="modal-actions">
           <button type="button" id="btn-delete-sale" class="btn danger">Excluir</button>
           <button type="submit" class="btn">Salvar Alterações</button>
@@ -908,6 +937,10 @@ const els = {
   editSaleDelivery: document.getElementById('edit-sale-delivery'),
   editSaleKg: document.getElementById('edit-sale-kg'),
   editSaleObs: document.getElementById('edit-sale-obs'),
+  editSalePrice: document.getElementById('edit-sale-price'),
+  editSaleCost: document.getElementById('edit-sale-cost'),
+  editSaleProfit: document.getElementById('edit-sale-profit'),
+  editSaleStatusSelect: document.getElementById('edit-sale-status-select'),
 };
 
 const DEFAULT_PAGE = 'home';
@@ -980,7 +1013,11 @@ async function refreshAll() {
   renderIngredientsSelects();
   renderRecipes();
   renderPurchases();
-  renderSales();
+
+  // Renderiza o calendário e os detalhes do dia
+  if(!calendarState.selectedKey){ calendarState.selectedKey = formatDateKey(new Date()); }
+  renderCalendar();
+  renderCalendarDayDetails(calendarState.selectedKey);
   populateReportFilter();
 }
 
@@ -1118,15 +1155,41 @@ function renderPurchases(){
   els.purchasesList.innerHTML = PURCHASES.map(p=> `${new Date(p.createdAt||p._id*1).toLocaleString()} — ${p.nome} — ${formatMeasure(p.quantidade, p.unidade)} — ${toBRL(p.preco)}`).join('<br>');
 }
 
-calendarState.selectedKey = formatDateKey(new Date());
-
-function renderSales(){
+/**
+ * Renderiza a tabela de vendas na parte inferior da página "Vendas",
+ * filtrando os pedidos pelo mês e ano fornecidos ou pelos filtros de relatório.
+ * @param {string|null} monthYearKey - Chave do mês/ano no formato 'YYYY-MM' para filtrar.
+ */
+function renderSalesTable(monthYearKey = null){
   if(!els.salesTableBody) return;
-  els.salesTableBody.innerHTML = '';
-  if(!ORDERS.length){
-    els.salesTableBody.innerHTML = `<tr><td colspan="9" class="muted">Ainda não há vendas registradas.</td></tr>`;
+
+  let ordersToDisplay = ORDERS;
+
+  if (monthYearKey) {
+    ordersToDisplay = ORDERS.filter(o => o.deliveryDate && o.deliveryDate.startsWith(monthYearKey));
   } else {
-    const sorted = [...ORDERS].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+    // Se nenhuma chave de mês/ano for fornecida, usa os valores atuais dos filtros de relatório
+    const year = els.reportYear.value;
+    const month = els.reportMonth.value;
+    if (year && month) {
+      const currentMonthYearKey = `${year}-${pad(month)}`;
+      ordersToDisplay = ORDERS.filter(o => o.deliveryDate && o.deliveryDate.startsWith(currentMonthYearKey));
+    }
+  }
+
+  els.salesTableBody.innerHTML = '';
+  if(!ordersToDisplay.length){
+    els.salesTableBody.innerHTML = `<tr><td colspan="9" class="muted">Nenhuma venda registrada para o período selecionado.</td></tr>`;
+  } else {
+    const sorted = [...ordersToDisplay].sort((a, b) => {
+      // 1. Pedidos 'done' vão para o final.
+      const statusSort = (a.status === 'done') - (b.status === 'done');
+      if (statusSort !== 0) {
+        return statusSort;
+      }
+      // 2. Se o status for o mesmo, ordena pela data de entrega (mais próxima primeiro).
+      return (a.deliveryDate || '').localeCompare(b.deliveryDate || '');
+    });
     sorted.forEach(order=>{
       const lucro = Number(order.priceSell||0) - Number(order.totalCost||0);
       const deliveryLabel = formatDelivery(order.deliveryDate);
@@ -1134,26 +1197,10 @@ function renderSales(){
       const qtyLabel = formatQuantityDisplay(order.kg || 0, order.priceType || 'kg');
       const tr = document.createElement('tr');
       tr.dataset.orderId = order._id;
-      tr.innerHTML = `
-        <td>${order.customer || '—'}</td>
-        <td>${order.recipe_name || '—'}</td>
-        <td>${deliveryLabel}</td>
-        <td>${qtyLabel}</td>
-        <td>${toBRL(order.priceSell||0)}</td>
-        <td>${toBRL(order.totalCost||0)}</td>
-        <td>${toBRL(lucro)}</td>
-        <td>${order.obs || '—'}</td>
-        <td><button type="button" class="status-chip ${status}" data-id="${order._id}">${status === 'done' ? 'Feito' : 'Pendente'}</button></td>
-      `;
+      tr.innerHTML = `<td>${order.customer || '—'}</td><td>${order.recipe_name || '—'}</td><td>${deliveryLabel}</td><td>${qtyLabel}</td><td>${toBRL(order.priceSell||0)}</td><td>${toBRL(order.totalCost||0)}</td><td>${toBRL(lucro)}</td><td>${order.obs || '—'}</td><td><button type="button" class="status-chip ${status}" data-id="${order._id}">${status === 'done' ? 'Feito' : 'Pendente'}</button></td>`;
       els.salesTableBody.appendChild(tr);
     });
   }
-  if(!calendarState.selectedKey){
-    calendarState.selectedKey = formatDateKey(new Date());
-  }
-  renderCalendar();
-  renderCalendarDayDetails(calendarState.selectedKey);
-  populateReportFilter();
 }
 
 function renderCalendar(){
@@ -1228,6 +1275,7 @@ function renderCalendarDayDetails(dateKey){
     const lucro = Number(item.priceSell||0) - Number(item.totalCost||0);
     return `
       <li>
+      <li data-order-id="${item._id}" style="cursor: pointer;">
         <strong>${item.recipe_name || 'Receita'}</strong>
         <span>${item.customer || 'Cliente não informado'} · ${formatQuantityDisplay(item.kg || 0, item.priceType || 'kg')}</span>
         <span>${toBRL(item.priceSell||0)} venda • ${toBRL(item.totalCost||0)} custo • lucro ${toBRL(lucro)}</span>
@@ -1286,6 +1334,7 @@ function triggerReportRender(){
   const month = els.reportMonth.value;
   if(year && month){
     renderReport(`${year}-${pad(month)}`);
+    renderSalesTable(`${year}-${pad(month)}`); // Atualiza a tabela de vendas também
   }
 }
 
@@ -1349,9 +1398,12 @@ if(els.reportMonth && els.reportYear){
 
 function shiftCalendarMonth(delta){
   const base = calendarState.current || new Date();
-  calendarState.current = new Date(base.getFullYear(), base.getMonth()+delta, 1);
+  const newDate = new Date(base.getFullYear(), base.getMonth() + delta, 1);
+  calendarState.current = newDate;
   renderCalendar();
   renderCalendarDayDetails(calendarState.selectedKey);
+  // Adicionado para atualizar a tabela de vendas junto com o calendário
+  renderSalesTable(`${newDate.getFullYear()}-${pad(newDate.getMonth() + 1)}`);
 }
 
 if(els.calendarPrev){
@@ -1363,15 +1415,29 @@ if(els.calendarNext){
 }
 
 document.addEventListener('click', async (ev)=>{
-  const chip = ev.target.closest('.status-chip');
-  if(!chip) return;
-  const orderId = chip.dataset.id;
-  if(!orderId) return;
-  const order = ORDERS.find(o=>o._id===orderId);
-  if(!order) return;
-  const nextStatus = order.status === 'done' ? 'pending' : 'done';
-  await setItem('orders', orderId, {status: nextStatus});
-  await refreshAll();
+    const chip = ev.target.closest('.status-chip');
+    if (!chip) return;
+    const orderId = chip.dataset.id;
+    if (!orderId) return;
+    const order = ORDERS.find(o => o._id === orderId);
+    if (!order) return;
+
+    const nextStatus = order.status === 'done' ? 'pending' : 'done';
+
+    // Animação de saída
+    const tr = document.querySelector(`#table-sales tr[data-order-id="${orderId}"]`);
+    if (tr && nextStatus === 'done') {
+        tr.classList.add('moving-out');
+        // Aguarda a animação de saída antes de recarregar
+        setTimeout(async () => {
+            await setItem('orders', orderId, { status: nextStatus });
+            await refreshAll();
+        }, 500); // Mesmo tempo da transição CSS
+    } else {
+        // Se não houver animação (ou for para 'pending'), atualiza imediatamente
+        await setItem('orders', orderId, { status: nextStatus });
+        await refreshAll();
+    }
 });
 
 function formatDelivery(value){
@@ -1669,6 +1735,12 @@ function openSaleEditModal(orderId) {
   els.editSaleKg.value = order.kg;
   els.editSaleObs.value = order.obs || '';
 
+  // Preenche os novos campos de informação
+  els.editSalePrice.textContent = toBRL(order.priceSell || 0);
+  els.editSaleCost.textContent = toBRL(order.totalCost || 0);
+  els.editSaleProfit.textContent = toBRL(order.lucro || 0);
+  els.editSaleStatusSelect.value = order.status || 'pending';
+
   els.saleEditModal.classList.add('visible');
 }
 
@@ -1685,6 +1757,17 @@ els.salesTableBody.addEventListener('click', (ev) => {
   const row = ev.target.closest('tr');
   if (row && row.dataset.orderId) {
     openSaleEditModal(row.dataset.orderId);
+  }
+});
+
+els.calendarDayDetails.addEventListener('click', (ev) => {
+  // Impede que o clique no botão de status abra o modal
+  if (ev.target.closest('.status-chip')) {
+    return;
+  }
+  const listItem = ev.target.closest('li[data-order-id]');
+  if (listItem && listItem.dataset.orderId) {
+    openSaleEditModal(listItem.dataset.orderId);
   }
 });
 
@@ -1726,6 +1809,7 @@ els.formEditSale.addEventListener('submit', async (ev) => {
   const newCustomer = els.editSaleCustomer.value.trim();
   const newDeliveryDate = els.editSaleDelivery.value;
   const newObs = els.editSaleObs.value.trim();
+  const newStatus = els.editSaleStatusSelect.value;
 
   // Recalcular preço e custo com a nova quantidade
   const newPriceSell = calculateRecipePrice(recipe, newQuantity);
@@ -1745,6 +1829,7 @@ els.formEditSale.addEventListener('submit', async (ev) => {
     priceSell: newPriceSell,
     totalCost: newTotalCost,
     lucro: newPriceSell - newTotalCost,
+    status: newStatus,
   };
 
   // ATENÇÃO: A lógica de devolução/retirada de insumos do estoque não foi implementada
