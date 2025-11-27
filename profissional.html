@@ -169,7 +169,7 @@
       font-size:0.9rem;
       color:var(--muted);
     }
-    input,select,button{
+    input,select,button,textarea{
       width:100%;
       padding:11px 12px;
       border-radius:10px;
@@ -177,7 +177,7 @@
       font-size:0.95rem;
       font-family:inherit;
     }
-    input:focus,select:focus,button:focus{
+    input:focus,select:focus,button:focus,textarea:focus{
       outline:2px solid #2563eb33;
       border-color:#2563eb66;
     }
@@ -579,6 +579,8 @@
               <input id="sale-delivery" type="date" required />
               <label for="sale-kg">Quantidade (kg ou unidades)</label>
               <input id="sale-kg" type="number" step="any" value="1" required />
+              <label for="sale-obs">Observações</label>
+              <textarea id="sale-obs" placeholder="Ex: Bolo sem nozes, embalar para presente" rows="3"></textarea>
               <div class="actions">
                 <button class="btn" type="submit">Registrar venda</button>
                 <button class="btn ghost" id="btn-clear-sale" type="button">Limpar</button>
@@ -620,11 +622,12 @@
                 <th>Preço venda</th>
                 <th>Custo</th>
                 <th>Lucro</th>
+                <th>Observações</th>
                 <th>Status</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="8" class="muted">Nenhuma venda registrada ainda.</td></tr>
+              <tr><td colspan="9" class="muted">Nenhuma venda registrada ainda.</td></tr>
             </tbody>
           </table>
         </article>
@@ -811,6 +814,7 @@ const els = {
   saleCustomer: document.getElementById('sale-customer'),
   saleDelivery: document.getElementById('sale-delivery'),
   saleKg: document.getElementById('sale-kg'),
+  saleObs: document.getElementById('sale-obs'),
   saleResult: document.getElementById('sale-result'),
   navLinks: Array.from(document.querySelectorAll('.nav a')),
   homeCardLinks: Array.from(document.querySelectorAll('.home-card')),
@@ -1048,7 +1052,7 @@ function renderSales(){
   if(!els.salesTableBody) return;
   els.salesTableBody.innerHTML = '';
   if(!ORDERS.length){
-    els.salesTableBody.innerHTML = `<tr><td colspan="8" class="muted">Ainda não há vendas registradas.</td></tr>`;
+    els.salesTableBody.innerHTML = `<tr><td colspan="9" class="muted">Ainda não há vendas registradas.</td></tr>`;
   } else {
     const sorted = [...ORDERS].sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
     sorted.forEach(order=>{
@@ -1065,6 +1069,7 @@ function renderSales(){
         <td>${toBRL(order.priceSell||0)}</td>
         <td>${toBRL(order.totalCost||0)}</td>
         <td>${toBRL(lucro)}</td>
+        <td>${order.obs || '—'}</td>
         <td><button type="button" class="status-chip ${status}" data-id="${order._id}">${status === 'done' ? 'Feito' : 'Pendente'}</button></td>
       `;
       els.salesTableBody.appendChild(tr);
@@ -1153,6 +1158,7 @@ function renderCalendarDayDetails(dateKey){
         <strong>${item.recipe_name || 'Receita'}</strong>
         <span>${item.customer || 'Cliente não informado'} · ${formatQuantityDisplay(item.kg || 0, item.priceType || 'kg')}</span>
         <span>${toBRL(item.priceSell||0)} venda • ${toBRL(item.totalCost||0)} custo • lucro ${toBRL(lucro)}</span>
+        ${item.obs ? `<span class="muted" style="font-style: italic;">Obs: ${item.obs}</span>` : ''}
         <button type="button" class="status-chip ${status}" data-id="${item._id}">${actionLabel}</button>
         <small class="muted">${statusLabel}</small>
       </li>
@@ -1517,6 +1523,7 @@ if(els.saleForm){
     if(!deliveryDate){ alert('Informe a data de entrega'); return; }
     const quantity = Number(els.saleKg.value) || 1;
     const priceInfo = getRecipePriceInfo(recipe);
+    const obs = els.saleObs.value.trim();
     const priceSell = calculateRecipePrice(recipe, quantity);
     const scale = quantity / (recipe.porcao_padrao_kg || 1);
     const details = recipe.ingredientes.map(it=>{
@@ -1567,6 +1574,7 @@ if(els.saleForm){
       priceSell,
       totalCost,
       lucro,
+      obs,
       priceType: priceInfo.type,
       status:'pending',
       createdAt:Date.now()
