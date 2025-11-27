@@ -1425,19 +1425,24 @@ document.addEventListener('click', async (ev)=>{
 
     const nextStatus = order.status === 'done' ? 'pending' : 'done';
 
+    // Guarda o mês/ano atual da visualização para recarregar a tabela corretamente.
+    const currentVisibleMonth = `${calendarState.current.getFullYear()}-${pad(calendarState.current.getMonth() + 1)}`;
+
     // Animação de saída
     const tr = document.querySelector(`#table-sales tr[data-order-id="${orderId}"]`);
     if (tr && nextStatus === 'done') {
         tr.classList.add('moving-out');
         // Aguarda a animação de saída antes de recarregar
         setTimeout(async () => {
-            await setItem('orders', orderId, { status: nextStatus });
-            await refreshAll();
+          await setItem('orders', orderId, { status: nextStatus });
+          await refreshAll();
+          renderSalesTable(currentVisibleMonth); // Recarrega a tabela para o mês correto
         }, 500); // Mesmo tempo da transição CSS
     } else {
         // Se não houver animação (ou for para 'pending'), atualiza imediatamente
-        await setItem('orders', orderId, { status: nextStatus });
-        await refreshAll();
+      await setItem('orders', orderId, { status: nextStatus });
+      await refreshAll();
+      renderSalesTable(currentVisibleMonth); // Recarrega a tabela para o mês correto
     }
 });
 
