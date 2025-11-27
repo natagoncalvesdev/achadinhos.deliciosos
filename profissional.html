@@ -1844,6 +1844,9 @@ els.formEditSale.addEventListener('submit', async (ev) => {
 
   closeSaleEditModal();
   await refreshAll();
+  // Garante que a tabela de vendas seja renderizada para o mês da nova data de entrega
+  const monthYearKey = newDeliveryDate.substring(0, 7); // Extrai 'YYYY-MM'
+  renderSalesTable(monthYearKey);
   alert('Venda atualizada com sucesso!');
 });
 
