@@ -1043,7 +1043,8 @@ function formatDateKey(value){
   if(value instanceof Date){
     return `${value.getFullYear()}-${pad(value.getMonth()+1)}-${pad(value.getDate())}`;
   }
-  const d = new Date(value);
+  // Adiciona 'T00:00:00' para garantir que a string seja interpretada como data local, não UTC.
+  const d = new Date(`${value}T00:00:00`);
   if(Number.isNaN(d.getTime())) return null;
   return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
 }
