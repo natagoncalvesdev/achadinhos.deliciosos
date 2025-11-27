@@ -1297,11 +1297,12 @@ document.addEventListener('click', async (ev)=>{
 
 function formatDelivery(value){
   if(!value) return '—';
-  const d = new Date(value);
+  // Corrigido: Adiciona 'T00:00:00' para tratar a data como local e evitar problemas de fuso horário.
+  const d = new Date(`${value}T00:00:00`);
   if(Number.isNaN(d.getTime())){
     return value;
   }
-  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  return d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric', timeZone: 'UTC'});
 }
 
 // ---------- Ingredient form ----------
